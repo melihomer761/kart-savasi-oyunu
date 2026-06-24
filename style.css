@@ -1060,3 +1060,10 @@ body {
         max-height: 80px;
     }
 }
+/* Yapay Zeka Aktif Seviye Buton Görseli */
+.ai-lvl-btn.active {
+    background-color: #e8f5e9 !important;
+    border-color: #4CAF50 !important;
+    color: #2e7d32 !important;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5) !important;
+}
