@@ -31,7 +31,10 @@ const cardEffects = {
                         ? attacker.levelAbilities.splashDamage[attacker.level - 1] 
                         : 11;
 
-                    // Kısa bir beklemeden sonra yan hasarı uygula
+                    // Alev patlaması asenkron süresince sırayı beklet
+                    gameState.waitingForAnimation = true;
+
+                    // Gecikmeden sonra yan hasarı uygula
                     setTimeout(() => {
                         // Alev animasyonu ekle
                         adjacentCards.forEach(card => {
@@ -41,10 +44,12 @@ const cardEffects = {
                         });
 
                         let splashMessage = `${attacker.name} alev patlaması ile `;
+                        let hitAny = false;
 
                         // Her yan karta hasarı uygula
                         adjacentCards.forEach((card, index) => {
                             if (card.health > 0) {
+                                hitAny = true;
                                 const { isDead: cardIsDead } = card.takeDamage(splashDamage, attacker);
 
                                 // Mesaja kart adını ekle
@@ -58,18 +63,28 @@ const cardEffects = {
                                 // Kart öldüyse bildirim göster
                                 if (cardIsDead) {
                                     gameState.addToBattleLog(`${card.name} öldü! ☠️`);
+                                    if (typeof UI !== 'undefined' && UI.setDead) {
+                                        UI.setDead(card);
+                                    }
                                 }
                             }
                         });
 
                         // Splash hasar mesajını ekle
-                        splashMessage += ` kartlarına ${splashDamage} yan hasar verdi! 🔥`;
-                        gameState.addToBattleLog(splashMessage);
+                        if (hitAny) {
+                            splashMessage += ` kartlarına ${splashDamage} yan hasar verdi! 🔥`;
+                            gameState.addToBattleLog(splashMessage);
+                        }
+
+                        // Animasyon kilidini kaldır ve kazananı kontrol et
+                        gameState.waitingForAnimation = false;
+                        gameState.checkForWinner();
 
                     }, 600);
                 }
             } catch (error) {
                 console.error(`Ateş Savaşçısı onAttack hatası:`, error);
+                gameState.waitingForAnimation = false;
             }
         },
         onGameStart: (card, gameState) => {
@@ -155,106 +170,60 @@ const cardEffects = {
         }
     },
     
-    // Çevik Hançer - Üç kez saldırma
+    // Çevik Hançer - Hata korumalı ardışık vuruş sistemi
     4: {
         onAttack: (attacker, target, gameState) => {
             try {
-                // Level bazlı saldırı sayısı
+                // Level bazlı saldırı sayısı (3 veya 4)
                 const attackCount = attacker.levelAbilities && attacker.levelAbilities.attackCount
                     ? attacker.levelAbilities.attackCount[attacker.level - 1]
                     : 3;
 
-                // Hasar değerini kaydet
                 const attackDamage = attacker.attack;
-
-                // Sıranın bir sonraki karta geçmesini engelle
+                
+                // Sıranın sonraki karta geçmesini engellemek için animasyon kilidini aç
                 gameState.waitingForAnimation = true;
 
-                // İkinci saldırı
-                setTimeout(() => {
-                    if (target.health > 0 && attacker.health > 0) {
-                        gameState.addToBattleLog(`${attacker.name} ikinci kez saldırıyor! ⚡`);
-                        attacker.attackAnimation();
-                        setTimeout(() => {
-                            if (attacker.health > 0) {
-                                const { actualDamage } = target.takeDamage(attackDamage, attacker);
+                let currentHit = 2; // 1. vuruş performAttack'ta zaten yapıldı
 
-                                gameState.addToBattleLog(`${attacker.name} ⚔️ ${target.name}'e ${actualDamage} hasar verdi!`);
-
-                                if (target.health <= 0) {
-                                    gameState.addToBattleLog(`${target.name} öldü! ☠️`);
-                                    if (typeof UI !== 'undefined' && UI.setDead) {
-                                        UI.setDead(target);
-                                    }
-                                    gameState.checkForWinner();
-                                    gameState.waitingForAnimation = false;
-                                } else if (attackCount >= 3) {
-                                    // Üçüncü saldırı
-                                    setTimeout(() => {
-                                        if (target.health > 0 && attacker.health > 0) {
-                                            gameState.addToBattleLog(`${attacker.name} üçüncü kez saldırıyor! ⚡`);
-                                            attacker.attackAnimation();
-                                            setTimeout(() => {
-                                                if (attacker.health > 0) {
-                                                    const { actualDamage: thirdDamage } = target.takeDamage(attackDamage, attacker);
-
-                                                    gameState.addToBattleLog(`${attacker.name} ⚔️ ${target.name}'e ${thirdDamage} hasar verdi!`);
-
-                                                    if (target.health <= 0) {
-                                                        gameState.addToBattleLog(`${target.name} öldü! ☠️`);
-                                                        if (typeof UI !== 'undefined' && UI.setDead) {
-                                                            UI.setDead(target);
-                                                        }
-                                                        gameState.checkForWinner();
-                                                    } else if (attackCount >= 4) {
-                                                        // Dördüncü saldırı (level 5)
-                                                        setTimeout(() => {
-                                                            if (target.health > 0 && attacker.health > 0) {
-                                                                gameState.addToBattleLog(`${attacker.name} dördüncü kez saldırıyor! ⚡`);
-                                                                attacker.attackAnimation();
-                                                                setTimeout(() => {
-                                                                    if (attacker.health > 0) {
-                                                                        const { actualDamage: fourthDamage } = target.takeDamage(attackDamage, attacker);
-
-                                                                        gameState.addToBattleLog(`${attacker.name} ⚔️ ${target.name}'e ${fourthDamage} hasar verdi!`);
-
-                                                                        if (target.health <= 0) {
-                                                                            gameState.addToBattleLog(`${target.name} öldü! ☠️`);
-                                                                            if (typeof UI !== 'undefined' && UI.setDead) {
-                                                                                UI.setDead(target);
-                                                                            }
-                                                                            gameState.checkForWinner();
-                                                                        }
-
-                                                                        gameState.waitingForAnimation = false;
-                                                                    } else {
-                                                                        gameState.waitingForAnimation = false;
-                                                                    }
-                                                                }, 500);
-                                                            } else {
-                                                                gameState.waitingForAnimation = false;
-                                                            }
-                                                        }, 800);
-                                                    } else {
-                                                        gameState.waitingForAnimation = false;
-                                                    }
-                                                } else {
-                                                    gameState.waitingForAnimation = false;
-                                                }
-                                            }, 500);
-                                        } else {
-                                            gameState.waitingForAnimation = false;
-                                        }
-                                    }, 800);
-                                }
-                            } else {
-                                gameState.waitingForAnimation = false;
-                            }
-                        }, 500);
-                    } else {
+                function nextStrike() {
+                    // Hedef veya saldıran öldüyse ya da tüm vuruşlar tamamlandıysa süreci sonlandır
+                    if (target.health <= 0 || attacker.health <= 0 || currentHit > attackCount) {
                         gameState.waitingForAnimation = false;
+                        if (target.health <= 0 && typeof UI !== 'undefined' && UI.setDead) {
+                            UI.setDead(target);
+                        }
+                        gameState.checkForWinner();
+                        return;
                     }
-                }, 800);
+
+                    gameState.addToBattleLog(`${attacker.name} ${currentHit}. kez saldırıyor! ⚡`);
+                    attacker.attackAnimation();
+
+                    setTimeout(() => {
+                        if (attacker.health > 0 && target.health > 0) {
+                            const { actualDamage, isDead } = target.takeDamage(attackDamage, attacker);
+                            gameState.addToBattleLog(`${attacker.name} ⚔️ ${target.name}'e ${actualDamage} hasar verdi!`);
+
+                            if (isDead) {
+                                gameState.addToBattleLog(`${target.name} öldü! ☠️`);
+                                if (typeof UI !== 'undefined' && UI.setDead) {
+                                    UI.setDead(target);
+                                }
+                                gameState.waitingForAnimation = false;
+                                gameState.checkForWinner();
+                                return;
+                            }
+                        }
+                        currentHit++;
+                        // Bir sonraki vuruş için zincirleme gecikme ekle
+                        setTimeout(nextStrike, 350);
+                    }, 500);
+                }
+
+                // Zincirleme saldırıyı başlat
+                setTimeout(nextStrike, 500);
+
             } catch (error) {
                 console.error(`Çevik Hançer onAttack hatası:`, error);
                 gameState.waitingForAnimation = false;
@@ -591,7 +560,18 @@ const cardEffects = {
                 const reflectPercentage = card.levelAbilities && card.levelAbilities.reflectPercentage
                     ? card.levelAbilities.reflectPercentage[card.level - 1]
                     : 25;
-                const reflectAmount = Math.floor((attacker.attack + (attacker.armor || 0)) * (reflectPercentage / 100));
+                
+                // DÜZELTME: Eğer gelen temel hasar zaten 0 ise zırh bypass edilmeli ve yansıyacak hasar 0 olmalıdır.
+                let actualDamageReceived = damage;
+                if (damage <= 0) {
+                    actualDamageReceived = 0;
+                } else if (typeof card.armor === 'number') {
+                    actualDamageReceived = damage - card.armor;
+                    if (actualDamageReceived < 0) actualDamageReceived = 0;
+                }
+
+                const reflectAmount = Math.floor(actualDamageReceived * (reflectPercentage / 100));
+                
                 if (reflectAmount > 0) {
                     setTimeout(() => {
                         try {
@@ -600,7 +580,7 @@ const cardEffects = {
                                 UI.setReflectDamage(card);
                             }
                             if (gameState) {
-                                gameState.addToBattleLog(`${card.name} saldırana ${actualDamage} hasar yansıttı! 🦔`);
+                                gameState.addToBattleLog(`${card.name} yansıyan hasar ile ${attacker.name}'e ${actualDamage} hasar yansıttı! 🦔`);
                                 if (attacker.health <= 0) {
                                     gameState.addToBattleLog(`${attacker.name} yansıyan hasardan dolayı öldü! ☠️`);
                                     if (typeof UI !== 'undefined' && UI.setDead) {
@@ -619,20 +599,8 @@ const cardEffects = {
                 console.error(`Dikenli Deri onTakeDamage hatası:`, error);
                 return damage;
             }
-        },
-        onGameStart: (card, gameState) => {
-            try {
-                const reflectPercentage = card.levelAbilities && card.levelAbilities.reflectPercentage
-                    ? card.levelAbilities.reflectPercentage[card.level - 1]
-                    : 25;
-                if (gameState) {
-                    gameState.addToBattleLog(`${card.name} saldırana hasarın %${reflectPercentage}'ini yansıtır! 🦔`);
-                }
-            } catch (error) {
-                console.error(`Dikenli Deri onGameStart hatası:`, error);
-            }
         }
-    },
+    }, // DÜZELTME: Kapatılmayan "}" süslü parantez buraya eklenerek sözdizimi (syntax) hatası giderildi.
     // İkili Siper
     16: {
         onTakeDamage: (card, damage, attacker, gameState) => {
@@ -658,7 +626,7 @@ const cardEffects = {
                 card.effects.dualCoverTriggered = true;
                 return damage;
             } catch (error) {
-                console.error(`İkili Siper onTakeDamage hatası:`, error);
+                console.error("İkili Siper onTakeDamage hatası:", error);
                 return damage;
             }
         },
@@ -683,7 +651,7 @@ const cardEffects = {
                     delete card.effects.dualCoverTriggered;
                 }
             } catch (error) {
-                console.error(`İkili Siper onTurnStart hatası:`, error);
+                console.error("İkili Siper onTurnStart hatası:", error);
             }
         },
         onGameStart: (card, gameState) => {
@@ -693,64 +661,86 @@ const cardEffects = {
                     : 5;
                 gameState.addToBattleLog(`${card.name} saldırı aldığında yanındaki dostlara +${armorBonus} zırh bonusu verir! 🛡️`);
             } catch (error) {
-                console.error(`İkili Siper onGameStart hatası:`, error);
+                console.error("İkili Siper onGameStart hatası:", error);
             }
         }
     },
-    // Kan Emici
+    // Kan Emici - Hata Korumalı Çift Vuruş ve Can Emme Sistemi
     10: {
         onAttack: (attacker, target, gameState, attackContext) => {
             try {
-                // Level bazlı heal percentage
+                // Level bazlı can emme yüzdesi
                 const healPercentage = attacker.levelAbilities && attacker.levelAbilities.healPercentage
                     ? attacker.levelAbilities.healPercentage[attacker.level - 1]
                     : 60;
 
-                // İlk vuruş zaten performAttack içinde yapıldı, sadece can em
+                // İlk vuruş performAttack içinde yapıldı, hasarı alıp can em
                 const firstHitDamage = attackContext?.firstHitDamage || 0;
                 const healAmount1 = Math.floor(firstHitDamage * (healPercentage / 100));
-                attacker.health += healAmount1;
-                attacker.updateCardElement();
-                if (typeof UI !== 'undefined' && UI.setHealed) {
-                    UI.setHealed(attacker);
+                
+                if (healAmount1 > 0) {
+                    attacker.health += healAmount1;
+                    attacker.updateCardElement();
+                    if (typeof UI !== 'undefined' && UI.setHealed) {
+                        UI.setHealed(attacker);
+                    }
+                    if (typeof UI !== 'undefined' && UI.showDamageText) {
+                        UI.showDamageText(attacker.element, healAmount1, 'heal');
+                    }
+                    gameState.addToBattleLog(`${attacker.name} ${healAmount1} can emdi! 💉`);
                 }
-                if (typeof UI !== 'undefined' && UI.showDamageText) {
-                    UI.showDamageText(attacker.element, healAmount1, 'heal');
-                }
-                gameState.addToBattleLog(`${attacker.name} ${healAmount1} can emdi! 💉`);
 
                 // İkinci vuruş
                 if (target.health > 0 && attacker.health > 0) {
                     gameState.waitingForAnimation = true;
-                    attacker.attackAnimation();
-                    gameState.addToBattleLog(`${attacker.name} ikinci kez saldırıyor! ⚡`);
+                    
                     setTimeout(() => {
                         try {
-                            if (attacker.health > 0) {
-                                const { actualDamage: actualDamage2 } = target.takeDamage(attacker.attack, attacker);
-                                gameState.addToBattleLog(`${attacker.name} ⚔️ ${target.name}'e ${actualDamage2} hasar verdi!`);
-                                const healAmount2 = Math.floor(actualDamage2 * (healPercentage / 100));
-                                attacker.health += healAmount2;
-                                attacker.updateCardElement();
-                                if (typeof UI !== 'undefined' && UI.setHealed) {
-                                    UI.setHealed(attacker);
-                                }
-                                if (typeof UI !== 'undefined' && UI.showDamageText) {
-                                    UI.showDamageText(attacker.element, healAmount2, 'heal');
-                                }
-                                gameState.addToBattleLog(`${attacker.name} ${healAmount2} can emdi! 💉`);
-                                gameState.waitingForAnimation = false;
-                                if (target.health <= 0) {
-                                    gameState.addToBattleLog(`${target.name} öldü! ☠️`);
-                                }
+                            if (attacker.health > 0 && target.health > 0) {
+                                attacker.attackAnimation();
+                                gameState.addToBattleLog(`${attacker.name} ikinci kez saldırıyor! ⚡`);
+
+                                setTimeout(() => {
+                                    try {
+                                        if (attacker.health > 0 && target.health > 0) {
+                                            const { actualDamage, isDead } = target.takeDamage(attacker.attack, attacker);
+                                            gameState.addToBattleLog(`${attacker.name} ⚔️ ${target.name}'e ${actualDamage} hasar verdi!`);
+                                            
+                                            const healAmount2 = Math.floor(actualDamage * (healPercentage / 100));
+                                            if (healAmount2 > 0) {
+                                                attacker.health += healAmount2;
+                                                attacker.updateCardElement();
+                                                if (typeof UI !== 'undefined' && UI.setHealed) {
+                                                    UI.setHealed(attacker);
+                                                }
+                                                if (typeof UI !== 'undefined' && UI.showDamageText) {
+                                                    UI.showDamageText(attacker.element, healAmount2, 'heal');
+                                                }
+                                                gameState.addToBattleLog(`${attacker.name} ${healAmount2} can emdi! 💉`);
+                                            }
+
+                                            if (isDead) {
+                                                gameState.addToBattleLog(`${target.name} öldü! ☠️`);
+                                                if (typeof UI !== 'undefined' && UI.setDead) {
+                                                    UI.setDead(target);
+                                                }
+                                                gameState.checkForWinner();
+                                            }
+                                        }
+                                        gameState.waitingForAnimation = false;
+                                    } catch (innerError) {
+                                        console.error(`Kan Emici ikinci vuruş hasar hatası:`, innerError);
+                                        gameState.waitingForAnimation = false;
+                                    }
+                                }, 500);
                             } else {
                                 gameState.waitingForAnimation = false;
                             }
-                        } catch (innerError) {
-                            console.error(`Kan Emici ikinci saldırı hatası:`, innerError);
+                        } catch (midError) {
+                            console.error(`Kan Emici ara saldırı hatası:`, midError);
                             gameState.waitingForAnimation = false;
                         }
-                    }, 350);
+                    }, 500);
                 }
             } catch (error) {
                 console.error(`Kan Emici hatası:`, error);
@@ -771,7 +761,7 @@ const cardEffects = {
         }
     },
 
-    // İkiz Okçu
+    // İkiz Okçu - Hata Korumalı İkinci Hedef Vuruş Sistemi
     11: {
         onAttack: (attacker, target, gameState) => {
             try {
@@ -788,24 +778,35 @@ const cardEffects = {
                     if (aliveEnemies.length > 0) {
                         const randomEnemy = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
 
+                        // İkinci ok süreci için animasyon kilidini aç
+                        gameState.waitingForAnimation = true;
+
                         setTimeout(() => {
                             try {
-                                if (attacker.health > 0) {
+                                if (attacker.health > 0 && randomEnemy.health > 0) {
                                     attacker.attackAnimation();
                                     const { actualDamage, isDead: isSecondTargetDead } = randomEnemy.takeDamage(attacker.attack, attacker);
                                     gameState.addToBattleLog(`${attacker.name} 🏹 ikinci bir ok atıyor! ${randomEnemy.name}'e ${actualDamage} hasar verdi!`);
+                                    
                                     if (isSecondTargetDead) {
                                         gameState.addToBattleLog(`${randomEnemy.name} öldü! ☠️`);
+                                        if (typeof UI !== 'undefined' && UI.setDead) {
+                                            UI.setDead(randomEnemy);
+                                        }
+                                        gameState.checkForWinner();
                                     }
                                 }
+                                gameState.waitingForAnimation = false;
                             } catch (innerError) {
                                 console.error(`İkiz Okçu ikinci hedef hatası:`, innerError);
+                                gameState.waitingForAnimation = false;
                             }
-                        }, 800);
+                        }, 500);
                     }
                 }
             } catch (error) {
                 console.error(`İkiz Okçu onAttack hatası:`, error);
+                gameState.waitingForAnimation = false;
             }
         },
         onGameStart: (card, gameState) => {
@@ -826,32 +827,30 @@ const cardEffects = {
 // Savaş Borazanı efektini uygulayan yardımcı fonksiyon
 function applyBattleHornEffect(card, gameState, isGameStart = false) {
     try {
-        // Hangi oyuncunun kartı olduğunu belirle
         const isPlayer1Card = gameState.player1Cards.includes(card);
         const targetCards = isPlayer1Card ? gameState.player1Cards : gameState.player2Cards;
 
-        // Tüm dost kartların atak değerini düzelt
         targetCards.forEach(targetCard => {
             if (targetCard.health > 0 && targetCard.baseId !== 9) { // Hayatta olan ve Savaş Borazanı olmayan kartlar
-                // Eğer bu kart için daha önce bonus uygulanmışsa, önce onu kaldır
                 if (targetCard._originalAttack !== undefined) {
                     targetCard.attack = targetCard._originalAttack;
                 } else {
-                    // Orijinal değeri kaydet
                     targetCard._originalAttack = targetCard.attack;
                 }
 
-                // Bonus uygula
-                targetCard.attack += 4;
+                // Savaş Borazanı level-up buff okuma mantığı
+                const bonusAmount = card.levelAbilities && card.levelAbilities.attackBonus
+                    ? card.levelAbilities.attackBonus[card.level - 1]
+                    : 4;
 
-                // Görsel güncelleme
+                targetCard.attack += bonusAmount;
+
                 if (typeof UI !== 'undefined' && UI.setAttackBuff) {
                     UI.setAttackBuff(targetCard, targetCard.attack, true);
                 }
             }
         });
 
-        // Log mesajını sadece bir kez ekle (her kart için tek sefer)
         if (!cardEffects[9].hasLoggedThisTurn || isGameStart) {
             cardEffects[9].hasLoggedThisTurn = true;
             gameState.addToBattleLog(`${card.name} dost kartların saldırısını arttırıyor! 🎺`);
@@ -863,17 +862,14 @@ function applyBattleHornEffect(card, gameState, isGameStart = false) {
 
 // Savaş Borazanı efektini kaldıran yardımcı fonksiyon
 function removeBattleHornEffect(card, gameState) {
-    // Hangi oyuncunun kartı olduğunu belirle
     const isPlayer1Card = gameState.player1Cards.includes(card);
     const targetCards = isPlayer1Card ? gameState.player1Cards : gameState.player2Cards;
     
-    // Tüm dost kartların atak değerini normalleştir
     targetCards.forEach(targetCard => {
         if (targetCard._originalAttack !== undefined) {
             targetCard.attack = targetCard._originalAttack;
             delete targetCard._originalAttack;
             
-            // Görsel güncelleme
             if (typeof UI !== 'undefined' && UI.setAttackBuff) {
                 UI.setAttackBuff(targetCard, targetCard.attack, false);
             }
@@ -881,10 +877,9 @@ function removeBattleHornEffect(card, gameState) {
     });
 }
 
-    // Merkezi zehir işleme fonksiyonu - her tur başında zehirli kartlar için çağrılır
+// Merkezi zehir işleme fonksiyonu - her tur başında zehirli kartlar için çağrılır
 function processPoisonOnTurnStart(card, gameState) {
     try {
-        // Büyü Tazısı (ID 12) zehir bağışıklığı
         if (card.baseId === 12) {
             return;
         }
@@ -898,17 +893,15 @@ function processPoisonOnTurnStart(card, gameState) {
             card.updateCardElement();
             gameState.addToBattleLog(`${card.name} zehirden ${poisonEffect.damage} hasar aldı! 💀 (${poisonEffect.source} tarafından)`);
 
-            // Floating combat text
             if (typeof UI !== 'undefined' && UI.showDamageText) {
                 UI.showDamageText(card.element, poisonEffect.damage, 'poison');
             }
 
-            // Görsel efekt ekle
             if (typeof UI !== 'undefined' && UI.setTakingPoisonDamage) {
                 UI.setTakingPoisonDamage(card);
             }
 
-            // Dikenli Deri (ID 15) - eğer zehirlenen kart Dikenli Deri ise, zehirin %25'ini kaynağa yansıt
+            // Dikenli Deri zehir yansıtma
             if (poisonEffect.sourceId) {
                 const isPlayer1Card = gameState.player1Cards.includes(card);
                 const enemyCards = isPlayer1Card ? gameState.player2Cards : gameState.player1Cards;
@@ -918,13 +911,10 @@ function processPoisonOnTurnStart(card, gameState) {
                     if (reflectAmount > 0) {
                         setTimeout(() => {
                             try {
-                                // Yansıtılan hasar saldırana uygulanır
                                 const result = attacker.takeDamage(reflectAmount, card, 'reflect');
-                                // Floating combat text yansıma için
                                 if (typeof UI !== 'undefined' && UI.showDamageText) {
                                     UI.showDamageText(attacker.element, reflectAmount, 'reflect');
                                 }
-                                // Görsel efekt saldıranda gösterilsin
                                 if (typeof UI !== 'undefined' && UI.setReflectDamage) {
                                     UI.setReflectDamage(attacker);
                                 }
@@ -944,22 +934,20 @@ function processPoisonOnTurnStart(card, gameState) {
                 }
             }
 
-            // Zırh -2 azaltma (negatif zırh oyunda izin veriliyorsa clamp kaldırıldı)
-            card.armor -= 2;
-            // Zehir azaltılan değeri kaydet (İkili Siper reset için)
+            const armorReductionAmount = typeof poisonEffect.armorReduction === 'number' ? poisonEffect.armorReduction : 2;
+            card.armor -= armorReductionAmount;
+            
             if (!card.effects) card.effects = {};
             if (typeof card.effects.poisonArmorReduction !== 'number') card.effects.poisonArmorReduction = 0;
-            card.effects.poisonArmorReduction += 2;
+            card.effects.poisonArmorReduction += armorReductionAmount;
             card.updateCardElement();
-            gameState.addToBattleLog(`${card.name} zehir nedeniyle zırhı 2 azaldı! 🛡️`);
+            gameState.addToBattleLog(`${card.name} zehir nedeniyle zırhı ${armorReductionAmount} azaldı! 🛡️`);
 
-            // Süreyi azalt
             poisonEffect.duration--;
             if (poisonEffect.duration <= 0) {
                 delete card.effects.poison;
                 gameState.addToBattleLog(`${card.name} artık zehirli değil.`);
 
-                // Görsel efekti kaldır
                 if (typeof UI !== 'undefined' && UI.setPoisoned) {
                     UI.setPoisoned(card, false);
                 }
@@ -971,8 +959,7 @@ function processPoisonOnTurnStart(card, gameState) {
         console.error(`processPoisonOnTurnStart hatası:`, error);
     }
 }
-
-// Büyü Tazısı liderlik etkisini her aktif lider için uygular
+// Büyü Tazısı etkisini her aktif lider için uygular
 function applyLeaderEffect(card, gameState) {
     try {
         if (!gameState) return;
@@ -999,20 +986,16 @@ function checkLeaderEffects(gameState) {
 
 // Kart yeteneklerini karttaki veriye bağlamak için işlev
 function applyCardEffects(gameState) {
-    // Tüm kartları döngüye al
     const allCards = [...gameState.player1Cards, ...gameState.player2Cards];
 
     allCards.forEach(card => {
-        // Kart ID'sine göre efektleri uygula
         const effect = cardEffects[card.baseId];
 
         if (effect) {
-            // Orijinal kart metodlarını yedekle
             if (!card._originalTakeDamage) {
                 card._originalTakeDamage = card.takeDamage;
             }
             
-            // Hasar alma metodunu özelleştir
             if (effect.onTakeDamage) {
                 card.takeDamage = function(amount, attacker) {
                     const modifiedDamage = effect.onTakeDamage(this, amount, attacker, gameState);
@@ -1033,14 +1016,12 @@ function applyCardEffects(gameState) {
                 };
             }
             
-            // Oyun başlangıç efekti
             if (effect.onGameStart) {
                 effect.onGameStart(card, gameState);
             }
         }
     });
 
-    // Çoklu Büyü Tazısı desteği için lider etkilerini kontrol et
     if (typeof checkLeaderEffects === 'function') {
         checkLeaderEffects(gameState);
     }
@@ -1048,11 +1029,9 @@ function applyCardEffects(gameState) {
 
 // Saldırı efektlerini uygulama
 function applyAttackEffects(attacker, target, gameState) {
-    // Yeni performAttack metodu
     if (typeof attacker.performAttack === 'function') {
         attacker.performAttack(target, gameState);
     } else {
-        // Eski sistem için geri dönüş desteği
         const effect = cardEffects[attacker.baseId];
         if (effect && effect.onAttack) {
             effect.onAttack(attacker, target, gameState);
@@ -1060,20 +1039,16 @@ function applyAttackEffects(attacker, target, gameState) {
     }
 }
 
-// İki oyunculu oyun modunu başlat (applyCardEffects artık GameState.startGame içinde çağrılıyor)
 function startTwoPlayerGame() {
-    // Geriye dönük uyumluluk — artık boş
+    // Geriye dönük uyumluluk boş
 }
 
-// Oyun başlatma işlemi override
 document.addEventListener('DOMContentLoaded', () => {
-    // Sadece setup işlemleri
     const startButton = document.getElementById('start-game-btn');
     startButton.addEventListener('click', () => {
         window.gameState.startGame();
     });
 
-    // Oyun durumunu oluştur (ama başlatma!)
     const gameState = new GameState(cardEffects);
     window.gameState = gameState;
-}); 
+});
