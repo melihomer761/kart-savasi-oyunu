@@ -1,0 +1,892 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1000px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    gap: 20px;
+}
+
+.turn-indicator {
+    text-align: center;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.active-player-indicator {
+    margin-top: 5px;
+    padding: 5px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#active-player {
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+#turn-status {
+    margin-top: 5px;
+    font-style: italic;
+    font-size: 0.9rem;
+    background-color: rgba(0,0,0,0.1);
+    padding: 3px;
+    border-radius: 3px;
+}
+
+.player1-turn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.player2-turn {
+    background-color: #FF5722;
+    color: white;
+}
+
+.player-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.player-area h2 {
+    text-align: center;
+}
+
+.cards-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.card {
+    width: 150px;
+    height: 200px;
+    background-color: #fff;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card h3 {
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.card-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.card-stat {
+    text-align: center;
+    flex: 1;
+}
+
+.card-description {
+    margin-top: 10px;
+    font-size: 12px;
+    text-align: center;
+    flex: 1;
+}
+
+.battle-log {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.battle-log h3 {
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+/* Oyun modu seçim ekranı */
+.game-mode-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.95);
+    display: none; /* Başlangıçta gizli, JS ile gösterilecek */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 200;
+    overflow-y: auto;
+}
+
+.game-mode-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.game-mode-buttons button {
+    padding: 15px 30px;
+    font-size: 18px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 250px;
+}
+
+.game-mode-buttons button:hover {
+    background-color: #0b7dda;
+}
+
+/* Kart seçim ekranı */
+.card-selection-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.98);
+    display: none; /* Başlangıçta gizli, JS ile gösterilecek */
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    z-index: 100;
+    overflow-y: auto;
+}
+
+.selection-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 10px 0;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.selection-instructions {
+    text-align: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #e8f5e9;
+    border-radius: 5px;
+    border-left: 4px solid #4CAF50;
+}
+
+.selection-instructions p {
+    font-size: 16px;
+    color: #2e7d32;
+    margin: 0;
+}
+
+.floating-damage-text {
+    position: absolute;
+    left: 50%;
+    top: 8%;
+    transform: translateX(-50%) translateY(0) scale(1.6);
+    opacity: 1;
+    pointer-events: none;
+    font-weight: 900;
+    font-size: 1.8rem;
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+    z-index: 20;
+    transition: transform 1.2s ease-out, opacity 1.2s ease-out;
+}
+
+.floating-damage-text--animate {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-70px) scale(1.2);
+}
+
+.floating-damage-text--physical,
+.floating-damage-text--poison,
+.floating-damage-text--reflect,
+.floating-damage-text--ice {
+    color: #f44336;
+}
+
+.floating-damage-text--heal {
+    color: #4caf50;
+}
+
+.player-indicator {
+    background-color: #ff9800;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin: 10px 0;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.available-cards-title {
+    margin-top: 20px;
+    padding: 8px 15px;
+    background-color: #2196F3;
+    color: white;
+    border-radius: 5px;
+    align-self: flex-start;
+    margin-left: 10%;
+}
+
+.available-cards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #f8f8f8;
+    border-radius: 10px;
+    width: 90%;
+    min-height: 230px;
+}
+
+.selected-cards {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.selected-cards h3 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+#selected-cards-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    min-height: 220px;
+    padding: 15px;
+    border: 2px dashed #bdbdbd;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+#start-game-btn, #next-player-btn {
+    margin-top: 10px;
+    padding: 12px 25px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#start-game-btn:hover, #next-player-btn:hover {
+    background-color: #388e3c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#start-game-btn:disabled, #next-player-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Oyuncu alanları renkleri */
+#player1-area {
+    background-color: #e3f2fd;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+#player2-area {
+    background-color: #fff3e0;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+/* Animasyonlar */
+@keyframes cardAttack {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0); }
+}
+
+.attacking {
+    animation: cardAttack 0.5s ease;
+}
+
+.card.selected {
+    border: 4px solid #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.7);
+    position: relative;
+}
+
+.card.selected::after {
+    content: "✓";
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 25px;
+    height: 25px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 25px;
+    text-align: center;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.card.damaged {
+    background-color: #ffebee;
+    animation: damage-pulse 1s;
+}
+
+.card.healed {
+    animation: heal-pulse 1s;
+}
+
+.card.invulnerable {
+    box-shadow: 0 0 15px 5px gold, inset 0 0 10px 3px gold;
+    animation: shield-pulse 2s infinite;
+}
+
+@keyframes shield-pulse {
+    0% { box-shadow: 0 0 15px 5px gold, inset 0 0 10px 3px gold; }
+    50% { box-shadow: 0 0 25px 10px gold, inset 0 0 15px 5px gold; }
+    100% { box-shadow: 0 0 15px 5px gold, inset 0 0 10px 3px gold; }
+}
+
+@keyframes damage-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes heal-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Manuel saldırı ve hedef seçimi için stiller */
+.card.active-card {
+    box-shadow: 0 0 15px 8px rgba(76, 175, 80, 0.9) !important;
+    transform: scale(1.1) !important;
+    z-index: 25 !important;
+    animation: pulse-green 1.5s infinite !important;
+    border: 4px solid #4CAF50 !important;
+    position: relative !important;
+}
+
+.card.active-card::after {
+    content: "▼";
+    position: absolute;
+    top: -30px;
+    left: calc(50% - 15px);
+    width: 30px;
+    height: 30px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 30px;
+    text-align: center;
+    font-weight: bold;
+    animation: bounce 1s infinite;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.card.targetable {
+    border: 3px solid #FF0000 !important;
+    box-shadow: 0 0 15px #FF0000 !important;
+    animation: target-pulse 1.5s infinite alternate !important;
+    position: relative !important;
+    z-index: 30 !important;
+    cursor: pointer !important;
+    transform: scale(1.05) !important;
+}
+
+.card.targetable:hover {
+    transform: scale(1.15) !important;
+    box-shadow: 0 0 20px #FF0000 !important;
+    z-index: 35 !important;
+}
+
+.card.targetable-clicked {
+    animation: target-clicked 0.3s ease-out;
+}
+
+.card.targetable-highlight {
+    animation: target-highlight 0.8s ease-in-out;
+    transform: scale(1.2) !important;
+    box-shadow: 0 0 25px 12px rgba(255, 0, 0, 1) !important;
+    z-index: 100 !important;
+}
+
+@keyframes target-highlight {
+    0% { transform: scale(1.05); box-shadow: 0 0 15px 5px rgba(244, 67, 54, 0.9); }
+    50% { transform: scale(1.2); box-shadow: 0 0 25px 12px rgba(255, 0, 0, 1); }
+    100% { transform: scale(1.05); box-shadow: 0 0 15px 5px rgba(244, 67, 54, 0.9); }
+}
+
+@keyframes target-clicked {
+    0% { transform: scale(1.05); }
+    50% { transform: scale(0.95); background-color: #ffcccc; }
+    100% { transform: scale(1.05); }
+}
+
+@keyframes target-pulse {
+    0% {
+        box-shadow: 0 0 5px 2px rgba(255, 0, 0, 0.7);
+        transform: scale(1);
+    }
+    100% {
+        box-shadow: 0 0 20px 10px rgba(255, 0, 0, 1);
+        transform: scale(1.08);
+    }
+}
+
+/* Aktif kart için animasyon */
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(76, 175, 80, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+/* Boş seçim mesajı */
+.empty-selection-message {
+    width: 100%;
+    text-align: center;
+    padding: 50px 0;
+    font-style: italic;
+    color: #888;
+    font-size: 18px;
+}
+
+/* Kart seçim gösterimi için stil */
+.card-selected-display {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+    transition: all 0.3s ease;
+}
+
+.card-selected-display:hover {
+    transform: scale(1.05);
+}
+
+.card.computer-targeted {
+    animation: computer-target-pulse 0.8s ease-in-out;
+    outline: 5px solid #FF9800;
+    z-index: 50;
+}
+
+@keyframes computer-target-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.5); }
+    50% { transform: scale(1.15); box-shadow: 0 0 0 10px rgba(255, 152, 0, 0.2); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+}
+
+/* Maksimum canı aşan durumlar için stil */
+.card .card-stat:first-child.over-healed {
+    color: #4CAF50 !important;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    animation: pulse-heal 1.5s infinite alternate;
+}
+
+@keyframes pulse-heal {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
+
+/* Dost kartların atak bonusu için stil */
+.card-stat.buffed {
+    color: #ff9900;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(255, 153, 0, 0.5);
+    animation: pulse-buff 1.5s infinite alternate;
+}
+
+@keyframes pulse-buff {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(1.1);
+    }
+}
+
+/* Devre dışı bırakılan kartlar için stil */
+.card.disabled-card {
+    position: relative;
+    pointer-events: none;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.card.disabled-card::before {
+    content: "❌";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    color: rgba(255, 0, 0, 0.7);
+    z-index: 10;
+}
+
+/* Yavaşlatılmış hız değeri için stil */
+.card-stat.slowed {
+    color: #1E88E5;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(30, 136, 229, 0.7);
+    animation: pulse-slow 2s infinite alternate;
+}
+
+@keyframes pulse-slow {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(1.1);
+        text-shadow: 0 0 8px rgba(30, 136, 229, 0.9);
+    }
+}
+
+/* Taş Kalkan ve Kan Emici efektleri için CSS */
+
+.card.damage-reduced {
+    animation: shield-flash 0.5s ease-in-out;
+}
+
+@keyframes shield-flash {
+    0% { box-shadow: 0 0 0 rgba(72, 178, 255, 0); border-color: #333; }
+    50% { box-shadow: 0 0 30px rgba(72, 178, 255, 0.8); border-color: #48b2ff; }
+    100% { box-shadow: 0 0 0 rgba(72, 178, 255, 0); border-color: #333; }
+}
+
+.card.healed {
+    animation: heal-pulse 1s ease-in-out;
+}
+
+@keyframes heal-pulse {
+    0% { box-shadow: 0 0 0 rgba(76, 175, 80, 0); border-color: #333; }
+    50% { box-shadow: 0 0 30px rgba(76, 175, 80, 0.8); border-color: #4caf50; }
+    100% { box-shadow: 0 0 0 rgba(76, 175, 80, 0); border-color: #333; }
+}
+
+.card.attacking {
+    animation: cardAttack 0.5s ease-in-out;
+}
+
+@keyframes cardAttack {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(30px); }
+    100% { transform: translateX(0); }
+}
+
+.card.dodged {
+    animation: dodge-animation 0.6s ease-in-out;
+}
+
+@keyframes dodge-animation {
+    0% { transform: translateY(0); opacity: 1; }
+    50% { transform: translateY(-20px); opacity: 0.5; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Zehir efekti */
+.poisoned {
+    animation: poison-pulse 0.8s ease-in-out;
+    box-shadow: 0 0 20px 5px rgba(83, 215, 106, 0.8);
+}
+
+.taking-poison-damage {
+    animation: poison-damage 0.6s ease-in-out;
+    box-shadow: 0 0 15px 3px rgba(83, 215, 106, 0.6);
+}
+
+.poisoned-effect {
+    border: 2px dashed #53d76a !important;
+}
+
+@keyframes poison-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 10px 2px rgba(83, 215, 106, 0.5); }
+    50% { transform: scale(1.05); box-shadow: 0 0 20px 5px rgba(83, 215, 106, 0.8); }
+    100% { transform: scale(1); box-shadow: 0 0 10px 2px rgba(83, 215, 106, 0.5); }
+}
+
+@keyframes poison-damage {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Yanan kartlar için alev efekti */
+@keyframes burning-flame {
+  0% { box-shadow: 0 0 10px 2px #ff9800, 0 0 20px 8px #ff5722; }
+  50% { box-shadow: 0 0 20px 8px #ff5722, 0 0 30px 16px #ff9800; }
+  100% { box-shadow: 0 0 10px 2px #ff9800, 0 0 20px 8px #ff5722; }
+}
+
+.burning-effect {
+  animation: burning-flame 1.2s infinite alternate;
+  border: 2px solid #ff9800;
+  background: linear-gradient(120deg, rgba(255,152,0,0.08) 0%, rgba(255,87,34,0.12) 100%);
+}
+
+.healer-effect {
+  border: 2.5px solid #4caf50 !important;
+  box-shadow: 0 0 18px 6px #4caf50, 0 0 8px 2px #a5d6a7;
+  background: linear-gradient(120deg, rgba(76,175,80,0.08) 0%, rgba(165,214,167,0.12) 100%);
+}
+
+/* Build Phase / Seçim Arayüzü Stilleri */
+
+.build-phase-info {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.available-points, .max-level {
+    padding: 8px 12px;
+    background-color: #e8f5e9;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.available-points {
+    color: #2e7d32;
+}
+
+.max-level {
+    color: #1565c0;
+}
+
+.selected-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.selected-card {
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    padding: 10px;
+    background: linear-gradient(135deg, #f5f5f5 0%, #fff 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.selected-card h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.selected-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.selected-card-stat {
+    padding: 4px;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.selected-card-level {
+    font-size: 13px;
+    font-weight: bold;
+    color: #ff9800;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.card-upgrade-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.upgrade-btn {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 12px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.upgrade-btn:hover:not(:disabled) {
+    background-color: #1976D2;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.upgrade-btn:disabled {
+    background-color: #bdbdbd;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.downgrade-btn {
+    padding: 6px 8px;
+    font-size: 14px;
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 0.3;
+}
+
+.downgrade-btn:hover:not(:disabled) {
+    background-color: #f57c00;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.downgrade-btn:disabled {
+    background-color: #bdbdbd;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+
+.remove-card-btn:hover {
+    background-color: #d32f2f;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+} 
+/* Seçim Fazı Wrapper ve Kart Üzeri Buton Tasarımları */
+.selected-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.selected-card-wrapper .card-upgrade-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    width: 150px; /* Kart genişliğiyle tam hizalanması için */
+    background-color: #f1f8e9;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #c5e1a5;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.selected-card-wrapper .card-upgrade-controls button {
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 4px;
+    border: 1px solid #81c784;
+    background-color: #fff;
+    padding: 4px 10px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.selected-card-wrapper .card-upgrade-controls button:hover:not(:disabled) {
+    background-color: #c8e6c9;
+    border-color: #4caf50;
+    transform: translateY(-1px);
+}
+
+.selected-card-wrapper .card-upgrade-controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: #ccc;
+    background-color: #f5f5f5;
+}
+
+.selected-card-wrapper .upgrade-level-label {
+    font-weight: bold;
+    font-size: 13px;
+    color: #2e7d32;
+    min-width: 60px;
+    text-align: center;
+}
+
+/* Kartların seçili alanındaki duruşu */
+.card-selected-display {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    transform: scale(1) !important;
+    cursor: default !important;
+}
+
+.card-selected-display:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+}
