@@ -886,7 +886,7 @@ body {
     padding: 10px;
     margin: 10px 0;
     max-height: 200px;
-    overflow-y: hidden; /* Animasyon geçişlerinde taşmayı önler */
+    overflow-y: hidden; /* Animasyon sırasında dikey taşmayı önler */
     transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
                 padding 0.4s ease, 
                 opacity 0.3s ease;
@@ -902,17 +902,18 @@ body {
     box-shadow: none;
 }
 
-/* Geliştirilmiş İnteraktif Başlık Paneli */
+/* Geliştirilmiş ve Ortalanmış Başlık Paneli */
 .battle-log-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: center; /* Başlığı tam ortaya hizalar */
     cursor: pointer;
     user-select: none;
     background-color: #f0f0f0;
     padding: 6px 12px;
     border-radius: 4px;
     border: 1px solid #ddd;
+    position: relative; /* Butonu sağa sabitlemek için referans */
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -922,12 +923,13 @@ body {
 }
 
 .battle-log-header h3 {
-    margin: 0;
+    margin: 0 auto; /* Yazıyı tam olarak merkeze kilitler */
     font-size: 13px;
     color: #333;
     display: flex;
     align-items: center;
     gap: 5px;
+    text-align: center;
 }
 
 /* Tıklanabilirlik İpucu */
@@ -938,7 +940,10 @@ body {
     font-weight: normal;
 }
 
+/* Kapat/Aç Butonunun Sağ Köşeye Sabitlenmesi */
 .toggle-log-btn {
+    position: absolute;
+    right: 12px; /* Sağ duvardan 12px içeriye sabitlendi */
     background-color: #ddd;
     border: 1px solid #ccc;
     border-radius: 3px;
@@ -968,10 +973,10 @@ body {
 
 
 /* ==========================================================================
-   DİKEY MOBİL EKRAN DÜZENİ (PORTRAIT LAYOUT - MAX 768PX)
+   DİKEY VE YATAY MOBİL EKRAN ORTAK DÜZENİ (PORTRAIT & LANDSCAPE - MAX 768PX)
    ========================================================================== */
 
-@media (max-width: 768px) and (orientation: portrait) {
+@media (max-width: 768px) {
     body {
         padding: 8px;
         align-items: flex-start;
@@ -1015,7 +1020,7 @@ body {
         line-height: 1.15 !important;
     }
 
-    /* DÜZELTME: Savaş alanındaki kartların alt alta tek sıra halinde uzamasını engellemek için 2x2 grid */
+    /* Kartların alt alta tek sıra halinde uzamasını engellemek için 2x2 dikey grid */
     .cards-container {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
@@ -1053,109 +1058,5 @@ body {
 
     #battle-log-content {
         max-height: 80px;
-    }
-}
-
-
-/* ==========================================================================
-   YATAY MOBİL EKRAN DÜZENİ (LANDSCAPE LAYOUT - MAX 900PX)
-   ========================================================================== */
-
-@media (max-width: 900px) and (orientation: landscape) {
-    body {
-        align-items: center;
-        padding: 5px;
-        min-height: 100vh;
-        overflow: hidden; /* Ekran kaymasını tamamen engeller */
-    }
-
-    .game-container {
-        flex-direction: row !important; /* Kart alanlarını yan yana yerleştirir */
-        height: 95vh;
-        width: 100%;
-        max-width: 100%;
-        padding: 8px;
-        gap: 8px;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .player-area {
-        flex: 1;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: 4px !important;
-        background-color: rgba(0, 0, 0, 0.02);
-        border-radius: 6px;
-    }
-
-    .player-area h2 {
-        font-size: 13px;
-        margin-bottom: 4px;
-    }
-
-    /* Savaş alanında yan yana bölünmüş 2x2 kart gridi */
-    .cards-container {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 6px !important;
-        justify-items: center;
-    }
-
-    .card {
-        width: 95px !important;
-        height: 110px !important;
-        padding: 4px !important;
-    }
-
-    .card h3 {
-        font-size: 10px !important;
-        margin-bottom: 2px !important;
-    }
-
-    .card h3 .card-level {
-        font-size: 8px !important;
-    }
-
-    .card-stats {
-        margin-top: 2px !important;
-    }
-
-    .card-stat {
-        font-size: 9px !important;
-        line-height: 1.1 !important;
-    }
-
-    /* Yatay ekranda sığmayan yetenek metinlerini gizliyoruz */
-    .card-description {
-        display: none !important;
-    }
-
-    /* Ortadaki Tur Gösterge Paneli */
-    .turn-indicator {
-        width: 110px !important;
-        padding: 4px !important;
-        font-size: 11px;
-        align-self: center;
-    }
-
-    .turn-indicator h2 {
-        font-size: 13px !important;
-    }
-
-    .active-player-indicator {
-        font-size: 10px !important;
-        margin-top: 2px;
-    }
-
-    #turn-status {
-        font-size: 9px !important;
-    }
-
-    /* Yatay modda log kutusunu tamamen gizleyerek alandan tasarruf ediyoruz */
-    .battle-log {
-        display: none !important;
     }
 }
