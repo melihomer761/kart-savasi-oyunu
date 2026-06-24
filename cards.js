@@ -512,12 +512,19 @@ class Card {
 
     // Hasar alma
     takeDamage(amount, attacker = null, type = 'physical') {
+        // HATA KORUMASI: Gelen hasar zaten 0 veya daha az ise (kaçınma vb.),
+        // negatif zırhın hasarı artıran matematiksel bug'ını önlemek için zırhı tamamen bypass ediyoruz.
+        if (amount <= 0) {
+            return { actualDamage: 0, isDead: this.health <= 0 };
+        }
+
         let actualDamage = amount;
         let armorLog = '';
         if (typeof this.armor === 'number' && this.armor !== 0) {
             const beforeArmor = actualDamage;
             actualDamage -= this.armor;
             if (actualDamage < 0) actualDamage = 0;
+            
             // Zırh log'unu sadece gerçek hasar varsa yaz
             if (actualDamage > 0 && attacker && attacker.gameState) {
                 if (this.armor > 0) {
@@ -654,3 +661,27 @@ class Card {
         }
     }
 }
+// Bilgisayar (AI) için önceden tanımlanmış esnek deste havuzu
+// İleride buraya sadece yeni nesneler ekleyerek deste sayısını dilediğiniz kadar artırabilirsiniz.
+const aiPreMadeDecks = [
+    {
+        id: "random",
+        name: "Tamamen Rastgele Deste",
+        cardIds: [] // Boş olması, bilgisayarın tamamen rastgele 4 kart seçeceği anlamına gelir
+    },
+    {
+        id: "attack",
+        name: "Hücum Deste (Saldırı Odaklı)",
+        cardIds: [1, 4, 6, 11] // Ateş Savaşçısı, Çevik Hançer, Kara Şövalye, İkiz Okçu
+    },
+    {
+        id: "defense",
+        name: "Savunma Duvarı (Defans & Şifa)",
+        cardIds: [3, 7, 12, 9] // Taş Kalkan, Şifacı, Büyü Tazısı, Savaş Borazanı
+    },
+    {
+        id: "poison",
+        name: "Zehirli Diken (Yansıtma & Zehir)",
+        cardIds: [8, 15, 13, 10] // Zehirli Ok, Dikenli Deri, Kalkan Kopyalayıcı, Kan Emici
+    }
+];
