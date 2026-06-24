@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kart Savaşı</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
     <style>
         /* Sayfa yükleme göstergesi */
         .loading-screen {
@@ -107,7 +107,8 @@
         <div class="available-cards" id="available-cards"></div>
     </div>
     
-    <script src="ui.js"></script>
+    <!-- ui.js sonuna ?v=2 eklenerek önbellek kırıldı -->
+    <script src="ui.js?v=2"></script>
     <script src="cards.js"></script>
     <script src="gameState.js"></script>
     <script src="gameLogic.js"></script>
@@ -148,4 +149,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
