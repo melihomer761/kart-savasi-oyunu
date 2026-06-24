@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kart Savaşı</title>
+    <!-- Tasarımın geri gelmesi için CSS bağlantısını ve cache kırıcı parametresini ekledik -->
     <link rel="stylesheet" href="style.css?v=2">
     <style>
         /* Sayfa yükleme göstergesi */
@@ -79,6 +80,52 @@
         </div>
     </div>
 
+    <!-- Yapay Zeka Ayar Ekranı (PvC Config) -->
+    <div class="game-mode-screen" id="pvc-config-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>Bilgisayar Rakibini Yapılandır</h2>
+        <div class="selection-container" style="max-width: 500px; width: 90%;">
+            
+            <!-- Bölüm 1: AI Deste Seçimi -->
+            <div class="config-section" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #333; text-align: left;">1. Bilgisayarın Destesi</h3>
+                <div id="ai-deck-select-container" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- JS tarafından dinamik olarak doldurulacaktır -->
+                </div>
+            </div>
+
+            <!-- Bölüm 2: Seviye Modu Seçimi -->
+            <div class="config-section" style="margin-bottom: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #333; text-align: left;">2. Güç ve Seviye Modu</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                        <input type="radio" name="ai-level-mode" value="balanced" checked>
+                        <span>Dengeli Mod (18 Puan Limitli - Sizin Gibi)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                        <input type="radio" name="ai-level-mode" value="flat">
+                        <span>Sabit Seviye Modu</span>
+                    </label>
+                    
+                    <!-- Sabit Seviye Seçim Butonları -->
+                    <div id="ai-flat-level-selector" style="display: flex; justify-content: space-between; gap: 5px; margin-top: 5px; width: 100%; opacity: 0.5; pointer-events: none;">
+                        <button type="button" class="ai-lvl-btn active" data-level="1" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold;">Lv 1</button>
+                        <button type="button" class="ai-lvl-btn" data-level="2" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold;">Lv 2</button>
+                        <button type="button" class="ai-lvl-btn" data-level="3" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold;">Lv 3</button>
+                        <button type="button" class="ai-lvl-btn" data-level="4" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold;">Lv 4</button>
+                        <button type="button" class="ai-lvl-btn" data-level="5" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold;">Lv 5</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bölüm 3: Kaydetme butonu -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="pvc-confirm-btn" style="padding: 12px 24px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; width: 100%;">
+                    Kaydet ve Kartlarımı Seçmeye Geç
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Kart Seçim Ekranı -->
     <div class="card-selection-screen" id="card-selection" style="display: none;">
         <h2>Kartlarınızı Seçin</h2>
@@ -107,7 +154,7 @@
         <div class="available-cards" id="available-cards"></div>
     </div>
     
-    <!-- ui.js sonuna ?v=2 eklenerek önbellek kırıldı -->
+    <!-- Scriptlerimizi hiyerarşik sırayla alt kısımda tek seferlik çağırıyoruz -->
     <script src="ui.js?v=2"></script>
     <script src="cards.js"></script>
     <script src="gameState.js"></script>
