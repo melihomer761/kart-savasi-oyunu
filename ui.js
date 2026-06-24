@@ -1,4 +1,7 @@
-// Kullanıcı arayüzü işlevleri
+// ==========================================================================
+// KART SAVAŞI - KULLANICI ARAYÜZÜ MOTORU (UI.JS NİHAİ TAM SÜRÜM)
+// ==========================================================================
+
 const UI = {
     // Kart seçimi sırasında arayüzü güncelle
     updateCardSelection: (selectedCards) => {
@@ -37,12 +40,14 @@ const UI = {
     // Savaş günlüğünü güncelle
     updateBattleLog: (message) => {
         const battleLog = document.getElementById('battle-log-content');
-        const logEntry = document.createElement('div');
-        logEntry.textContent = message;
-        battleLog.appendChild(logEntry);
-        
-        // Otomatik kaydırma
-        battleLog.scrollTop = battleLog.scrollHeight;
+        if (battleLog) {
+            const logEntry = document.createElement('div');
+            logEntry.textContent = message;
+            battleLog.appendChild(logEntry);
+            
+            // Otomatik kaydırma
+            battleLog.scrollTop = battleLog.scrollHeight;
+        }
     },
     
     // Oyun tahtasını güncelle
@@ -86,13 +91,32 @@ const UI = {
             descElement.textContent = card.description;
         }
 
+        // Doğrudan seviye verisinden o anki taban değerleri okuyoruz
+        const idx = card.level - 1;
+        let baseAttack = card.startingValues.attack;
+        let baseSpeed = card.startingValues.speed;
+        let baseArmor = card.startingValues.armor;
+
+        if (card.levels && card.levels[card.level]) {
+            const lvlData = card.levels[card.level];
+            if (lvlData.attack !== undefined) baseAttack = lvlData.attack;
+            if (lvlData.speed !== undefined) baseSpeed = lvlData.speed;
+            if (lvlData.armor !== undefined) baseArmor = lvlData.armor;
+        } else if (card.levelStats) {
+            if (card.levelStats.attack && card.levelStats.attack[idx] !== undefined) baseAttack = card.levelStats.attack[idx];
+            if (card.levelStats.speed && card.levelStats.speed[idx] !== undefined) baseSpeed = card.levelStats.speed[idx];
+            if (card.levelStats.armor && card.levelStats.armor[idx] !== undefined) baseArmor = card.levelStats.armor[idx];
+        }
+
         // Saldırı değerini güncelle
         if (attackStat) {
             attackStat.innerHTML = `⚔️<br>${card.attack}`;
-            if (card.attack > card.startingValues?.attack) {
+            if (card.attack > baseAttack) {
                 attackStat.classList.add('buffed');
-            } else if (card.attack < card.startingValues?.attack) {
+                attackStat.classList.remove('debuffed');
+            } else if (card.attack < baseAttack) {
                 attackStat.classList.add('debuffed');
+                attackStat.classList.remove('buffed');
             } else {
                 attackStat.classList.remove('buffed', 'debuffed');
             }
@@ -101,12 +125,12 @@ const UI = {
         // Hız değerini güncelle
         if (speedStat) {
             speedStat.innerHTML = `⚡<br>${card.speed}`;
-            if (card.speed > card.startingValues?.speed) {
+            if (card.speed > baseSpeed) {
                 speedStat.classList.add('buffed');
                 speedStat.classList.remove('slowed', 'debuffed');
-            } else if (card.speed < card.startingValues?.speed) {
+            } else if (card.speed < baseSpeed) {
                 speedStat.classList.add('slowed');
-                speedStat.classList.remove('buffed');
+                speedStat.classList.remove('buffed', 'debuffed');
             } else {
                 speedStat.classList.remove('buffed', 'slowed', 'debuffed');
             }
@@ -125,11 +149,12 @@ const UI = {
         // Zırh değerini güncelle
         if (armorStat) {
             armorStat.innerHTML = `🛡️<br>${card.armor}`;
-            if (card.armor < card.startingValues?.armor) {
-                armorStat.classList.add('debuffed');
-            } else if (card.armor > card.startingValues?.armor) {
+            if (card.armor > baseArmor) {
                 armorStat.classList.add('buffed');
                 armorStat.classList.remove('debuffed');
+            } else if (card.armor < baseArmor) {
+                armorStat.classList.add('debuffed');
+                armorStat.classList.remove('buffed');
             } else {
                 armorStat.classList.remove('buffed', 'debuffed');
             }
@@ -321,9 +346,32 @@ const UI = {
             alert(`Oyun bitti! ${winner} kazandı!`);
         }, 1000);
     },
-    
+    showAiConfigScreen: function() {
+        const configScreen = document.getElementById('pvc-config-screen');
+        if (!configScreen) return;
+        
+        configScreen.style.display = 'flex';
+        
+        // Hazır desteleri dinamik render et
+        const container = document.getElementById('ai-deck-select-container');
+        if (container) {
+            container.innerHTML = '';
+            aiPreMadeDecks.forEach((deck, idx) => {
+                const label = document.createElement('label');
+                label.className = 'ai-deck-label';
+                label.style.cssText = "display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; padding: 6px; border-radius: 4px; transition: background-color 0.2s;";
+                
+                const checked = idx === 0 ? 'checked' : '';
+                label.innerHTML = `
+                    <input type="radio" name="ai-deck-select" value="${deck.id}" ${checked}>
+                    <span>${deck.name}</span>
+                `;
+                container.appendChild(label);
+            });
+        }
+    },
     showCardInfo: (card) => {
-        // İleride tooltip geliştirme alanı
+        // İleride tooltip alanı
     },
     
     // Seçilen kartları göster ve upgrade kontrolleri ekle
@@ -430,34 +478,7 @@ const UI = {
     }
 };
 
-// Ek UI stilleri ve hazırlık adımları
-document.addEventListener('DOMContentLoaded', () => {
-    document.body.addEventListener('mouseover', (event) => {
-        if (event.target.closest('.card')) {
-            const card = event.target.closest('.card');
-        }
-    });
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("Sayfa yüklendi, oyun başlatılıyor...");
-    prepareCardElements();
-    
-    const gameModeScreen = document.getElementById('game-mode-selection');
-    if (gameModeScreen) {
-        setTimeout(() => {
-            gameModeScreen.style.display = 'flex';
-        }, 500);
-    }
-
-    setTimeout(() => {
-        if (window.gameState) {
-            window.gameState.initGame();
-            UI.showInfoMessage('Kart Savaşı oyununa hoş geldiniz! Lütfen bir oyun modu seçin.', 3000);
-        }
-    }, 1000);
-});
-
+// Savaş alanı elemanlarını hazırlar
 function prepareCardElements() {
     const style = document.createElement('style');
     style.textContent = `
@@ -505,3 +526,134 @@ function prepareCardElements() {
     `;
     document.head.appendChild(style);
 }
+
+// Katlanabilir Savaş Günlüğü kurulum fonksiyonu
+function initCollapsibleBattleLog() {
+    const logContainer = document.getElementById('battle-log-content');
+    const battleLogTitle = document.querySelector('.battle-log h3');
+    
+    if (!logContainer || !battleLogTitle) {
+        console.warn("Savaş günlüğü elementleri bulunamadı, kurulum atlanıyor.");
+        return;
+    }
+    
+    // H3 başlığını tıklanabilir bir header paneline dönüştürüyoruz
+    const logHeader = document.createElement('div');
+    logHeader.className = 'battle-log-header';
+    logHeader.style.width = '100%';
+    
+    const titleText = document.createElement('h3');
+    titleText.textContent = 'Savaş Kayıtları ';
+    logHeader.appendChild(titleText);
+    
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'toggle-log-btn';
+    toggleBtn.innerHTML = 'Kapat ▲';
+    logHeader.appendChild(toggleBtn);
+    
+    // Orijinal H3 başlığını kaldırıp yeni header paneli ekliyoruz
+    const parent = battleLogTitle.parentNode;
+    parent.insertBefore(logHeader, battleLogTitle);
+    battleLogTitle.remove();
+    
+    const battleLogBox = document.querySelector('.battle-log');
+    
+    const toggleAction = (e) => {
+        if (e) e.stopPropagation();
+        const isCollapsed = battleLogBox.classList.toggle('collapsed');
+        if (isCollapsed) {
+            toggleBtn.innerHTML = 'Aç ▼';
+        } else {
+            toggleBtn.innerHTML = 'Kapat ▲';
+            setTimeout(() => {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }, 80);
+        }
+    };
+    
+    logHeader.addEventListener('click', toggleAction);
+    
+    // Mobilde savaşı kapalı (collapsed) başlatıyoruz
+    if (window.innerWidth <= 768) {
+        battleLogBox.classList.add('collapsed');
+        toggleBtn.innerHTML = 'Aç ▼';
+    }
+}
+
+// UI ve Savaş logunun TEK BİRLEŞTİRİLMİŞ ana DOMContentLoaded dinleyicisi
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Sayfa yüklendi, oyun başlatılıyor...");
+    
+    // Fare imleci hover dinleyicisi
+    document.body.addEventListener('mouseover', (event) => {
+        if (event.target.closest('.card')) {
+            const card = event.target.closest('.card');
+        }
+    });
+
+    // Orijinal arayüz hazırlıkları
+    prepareCardElements();
+    
+    // Katlanabilir Savaş Günlüğü kurulumu
+    initCollapsibleBattleLog();
+    // 4. PvC Seviye Modu Radyoları ve Lv seçicinin aktiflik kontrolleri
+    const levelModeRadios = document.querySelectorAll('input[name="ai-level-mode"]');
+    const flatLevelSelector = document.getElementById('ai-flat-level-selector');
+    
+    levelModeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'flat') {
+                flatLevelSelector.style.opacity = '1';
+                flatLevelSelector.style.pointerEvents = 'auto';
+            } else {
+                flatLevelSelector.style.opacity = '0.5';
+                flatLevelSelector.style.pointerEvents = 'none';
+            }
+        });
+    });
+
+    // 5. Sabit seviye butonlarının tıklama yönetimi
+    const aiLvlButtons = document.querySelectorAll('.ai-lvl-btn');
+    aiLvlButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            aiLvlButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // 6. "Kaydet ve Kartlarımı Seçmeye Geç" Onay Butonu
+    const pvcConfirmBtn = document.getElementById('pvc-confirm-btn');
+    if (pvcConfirmBtn) {
+        pvcConfirmBtn.addEventListener('click', () => {
+            const selectedDeck = document.querySelector('input[name="ai-deck-select"]:checked').value;
+            const selectedLevelMode = document.querySelector('input[name="ai-level-mode"]:checked').value;
+            const activeLvlBtn = document.querySelector('.ai-lvl-btn.active');
+            const flatLevel = activeLvlBtn ? parseInt(activeLvlBtn.dataset.level) : 1;
+
+            const aiConfig = {
+                deckId: selectedDeck,
+                levelMode: selectedLevelMode,
+                flatLevel: flatLevel
+            };
+
+            if (window.gameState) {
+                window.gameState.confirmAiConfig(aiConfig);
+            }
+        });
+    }
+    // Oyun modu ekranı hazırlığı
+    const gameModeScreen = document.getElementById('game-mode-selection');
+    if (gameModeScreen) {
+        setTimeout(() => {
+            gameModeScreen.style.display = 'flex';
+        }, 500);
+    }
+
+    // Oyun başlatma döngüsü
+    setTimeout(() => {
+        if (window.gameState) {
+            window.gameState.initGame();
+            UI.showInfoMessage('Kart Savaşı oyununa hoş geldiniz! Lütfen bir oyun modu seçin.', 3000);
+        }
+    }, 1000);
+});
