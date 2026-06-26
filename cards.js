@@ -1,28 +1,27 @@
-// Kartların veri yapısı
 const cardsData = [
     {
         id: 1,
         name: "Ateş Savaşçısı",
         health: 137,
-        attack: 17,
+        attack: 18,
         speed: 7,
         armor: 2,
         description: "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 11 hasar alır.",
         levelStats: {
             health: [137, 137, 137, 137, 137],
-            attack: [17, 24, 24, 24, 24],
+            attack: [18, 24, 24, 24, 24],
             speed: [7, 7, 7, 7, 7],
             armor: [2, 2, 2, 4, 4]
         },
         levelAbilities: {
-            splashDamage: [11, 11, 18, 18, 24]
+            splashDamage: [11, 11, 17, 17, 22]
         },
         levelDescriptions: [
             "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 11 hasar alır.",
-            "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 11 hasar alır. (+7 Hasar)",
-            "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 18 hasar alır. (+7 Hasar)",
-            "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 18 hasar alır. (+7 Hasar, +2 Zırh)",
-            "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 24 hasar alır. (+7 Hasar, +2 Zırh)"
+            "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 11 hasar alır. (+6 Hasar)",
+            "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 17 hasar alır. (+6 Hasar)",
+            "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 17 hasar alır. (+6 Hasar, +2 Zırh)",
+            "Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 22 hasar alır. (+6 Hasar, +2 Zırh)"
         ]
     },
     {
@@ -57,72 +56,73 @@ const cardsData = [
         attack: 15,
         speed: 3,
         armor: 0,
-        description: "Gelen hasarın %20'sini engeller.",
+        description: "Gelen hasarın %30'unu engeller.",
         levelStats: {
-            health: [150, 175, 175, 175, 175],
-            attack: [15, 15, 15, 20, 20],
-            speed: [3, 3, 3, 3, 7],
+            health: [150, 170, 170, 170, 170],
+            attack: [15, 15, 15, 21, 21],
+            speed: [3, 3, 3, 3, 3],
             armor: [0, 0, 0, 0, 0]
         },
         levelAbilities: {
-            damageReduction: [20, 20, 25, 25, 35]
+            damageReduction: [30, 30, 40, 40, 50]
         },
         levelDescriptions: [
-            "Gelen hasarın %20'sini engeller.",
-            "Gelen hasarın %20'sini engeller. (+25 Can)",
-            "Gelen hasarın %25'ini engeller. (+25 Can)",
-            "Gelen hasarın %25'ini engeller. (+25 Can, +5 Hasar)",
-            "Gelen hasarın %35'ini engeller. (+25 Can, +5 Hasar, +4 Hız)"
+            "Gelen hasarın %30'unu engeller.",
+            "Gelen hasarın %30'unu engeller. (+20 Can)",
+            "Gelen hasarın %40'ını engeller. (+20 Can)",
+            "Gelen hasarın %40'ını engeller. (+20 Can, +6 Hasar)",
+            "Gelen hasarın %50'sini engeller. (+20 Can, +6 Hasar)"
         ]
     },
     {
         id: 4,
         name: "Çevik Hançer",
         health: 70,
-        attack: 12,
+        attack: 13,
         speed: 10,
         armor: 0,
-        description: "Peş peşe 3 kez hasar verir",
+        description: "Peş peşe 3 kez hasar verir.",
         levelStats: {
-            health: [70, 70, 85, 85, 85],
-            attack: [12, 14, 14, 14, 14],
+            health: [70, 84, 84, 84, 84],
+            attack: [13, 13, 10, 14, 8],
             speed: [10, 10, 10, 10, 10],
-            armor: [0, 0, 0, 3, 3]
+            armor: [0, 0, 0, 2, 2]
         },
         levelAbilities: {
-            attackCount: [3, 3, 3, 3, 4]
+            attackCount: [3, 3, 4, 4, 5]
         },
         levelDescriptions: [
-            "Peş peşe 3 kez hasar verir",
-            "Peş peşe 3 kez hasar verir. (+2 Hasar)",
-            "Peş peşe 3 kez hasar verir. (+2 Hasar, +15 Can)",
-            "Peş peşe 3 kez hasar verir. (+2 Hasar, +15 Can, +3 Zırh)",
-            "Peş peşe 4 kez hasar verir. (+2 Hasar, +15 Can, +3 Zırh)"
+            "Peş peşe 3 kez hasar verir.",
+            "Peş peşe 3 kez hasar verir. (+14 Can)",
+            "Peş peşe 4 kez hasar verir. (+14 Can, -3 Hasar)",
+            "Peş peşe 4 kez hasar verir. (+14 Can, +1 Hasar, +2 Zırh)",
+            "Peş peşe 5 kez hasar verir. (+14 Can, -5 Hasar, +2 Zırh)"
         ]
     },
     {
         id: 5,
         name: "Hayalet",
-        health: 60,
+        health: 48,
         attack: 35,
         speed: 9,
         armor: -4,
-        description: "İlk iki saldırıda %60 kaçınma şansına sahiptir.",
+        description: "İlk 3 saldırıda %55 kaçınma şansına sahiptir.",
         levelStats: {
-            health: [60, 75, 75, 85, 85],
-            attack: [35, 35, 35, 35, 35],
+            health: [48, 60, 60, 60, 60],
+            attack: [35, 35, 35, 43, 43],
             speed: [9, 9, 9, 9, 9],
-            armor: [-4, -4, -4, -4, -4]
+            armor: [-4, -4, -4, -2, -2]
         },
         levelAbilities: {
-            dodgeCount: [2, 2, 3, 3, 5]
+            dodgeChance: [55, 55, 60, 60, 65],
+            dodgeCount: [3, 3, 4, 4, 6]
         },
         levelDescriptions: [
-            "İlk iki saldırıda %60 kaçınma şansına sahiptir.",
-            "İlk iki saldırıda %60 kaçınma şansına sahiptir. (+15 Can)",
-            "İlk üç saldırıda %60 kaçınma şansına sahiptir. (+15 Can)",
-            "İlk üç saldırıda %60 kaçınma şansına sahiptir. (+25 Can)",
-            "İlk beş saldırıda %60 kaçınma şansına sahiptir. (+25 Can)"
+            "İlk 3 saldırıda %55 kaçınma şansına sahiptir.",
+            "İlk 3 saldırıda %55 kaçınma şansına sahiptir. (+12 Can)",
+            "İlk 4 saldırıda %60 kaçınma şansına sahiptir. (+12 Can)",
+            "İlk 4 saldırıda %60 kaçınma şansına sahiptir. (+12 Can, +8 Hasar, +2 Zırh)",
+            "İlk 6 saldırıda %65 kaçınma şansına sahiptir. (+12 Can, +8 Hasar, +2 Zırh)"
         ]
     },
     {
@@ -205,26 +205,27 @@ const cardsData = [
     {
         id: 9,
         name: "Savaş Borazanı",
-        health: 145,
+        health: 130,
         attack: 12,
         speed: 1,
         armor: 1,
-        description: "Yaşadığı sürece dost kartların saldırı gücü +4 artar.",
+        description: "Yaşadığı sürece dost kartların saldırı gücü +3, hızı +1 artar.",
         levelStats: {
-            health: [145, 145, 145, 165, 165],
+            health: [130, 130, 130, 151, 151],
             attack: [12, 17, 17, 17, 17],
             speed: [1, 1, 1, 1, 1],
             armor: [1, 1, 1, 1, 1]
         },
         levelAbilities: {
-            attackBonus: [4, 4, 6, 6, 8]
+            attackBonus: [3, 3, 5, 5, 7],
+            speedBonus: [1, 1, 2, 2, 4]
         },
         levelDescriptions: [
-            "Yaşadığı sürece dost kartların saldırı gücü +4 artar.",
-            "Yaşadığı sürece dost kartların saldırı gücü +4 artar. (+5 Hasar)",
-            "Yaşadığı sürece dost kartların saldırı gücü +6 artar. (+5 Hasar)",
-            "Yaşadığı sürece dost kartların saldırı gücü +6 artar. (+5 Hasar, +20 Can)",
-            "Yaşadığı sürece dost kartların saldırı gücü +8 artar. (+5 Hasar, +20 Can)"
+            "Yaşadığı sürece dost kartların saldırı gücü +3, hızı +1 artar.",
+            "Yaşadığı sürece dost kartların saldırı gücü +3, hızı +1 artar. (+5 Hasar)",
+            "Yaşadığı sürece dost kartların saldırı gücü +5, hızı +2 artar. (+5 Hasar)",
+            "Yaşadığı sürece dost kartların saldırı gücü +5, hızı +2 artar. (+5 Hasar, +21 Can)",
+            "Yaşadığı sürece dost kartların saldırı gücü +7, hızı +4 artar. (+5 Hasar, +21 Can)"
         ]
     },
     {
@@ -281,47 +282,74 @@ const cardsData = [
         id: 12,
         name: "Büyü Tazısı",
         health: 112,
-        attack: 23,
+        attack: 21,
         speed: 4,
-        armor: 7,
+        armor: 6,
         description: "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır.",
         levelStats: {
-            health: [112, 123, 123, 135, 135],
-            attack: [23, 23, 26, 26, 26],
+            health: [112, 120, 120, 120, 130],
+            attack: [21, 21, 26, 26, 26],
             speed: [4, 4, 4, 4, 4],
-            armor: [7, 7, 7, 7, 9]
+            armor: [6, 6, 6, 7, 7]
         },
         levelDescriptions: [
             "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır.",
-            "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır. (+11 Can)",
-            "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır. (+11 Can, +3 Hasar)",
-            "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır. (+23 Can, +3 Hasar)",
-            "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır. (+23 Can, +3 Hasar, +2 Zırh)"
+            "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır. (+8 Can)",
+            "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır. (+8 Can, +5 Hasar)",
+            "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır. (+8 Can, +5 Hasar, +1 Zırh)",
+            "Sahadayken tüm düşman saldırılarını üzerine çeker. Zehirli saldırılara karşı bağışıktır. (+18 Can, +5 Hasar, +1 Zırh)"
         ]
     },
     {
         id: 13,
         name: "Kalkan Kopyalayıcı",
         health: 77,
-        attack: 21,
-        speed: 9,
+        attack: 23,
+        speed: 6,
         armor: 0,
         description: "Saldırıya uğradığında rakibin zırhını +2 ile kopyalar.",
         levelStats: {
-            health: [77, 77, 77, 89, 89],
-            attack: [21, 21, 24, 24, 24],
-            speed: [9, 9, 9, 9, 9],
+            health: [77, 77, 77, 77, 77],
+            attack: [23, 23, 29, 29, 29],
+            speed: [6, 6, 6, 10, 10],
             armor: [0, 0, 0, 0, 0]
         },
         levelAbilities: {
-            armorCopyBonus: [2, 3, 3, 3, 6]
+            armorCopyBonus: [2, 3, 3, 3, 5]
         },
         levelDescriptions: [
             "Saldırıya uğradığında rakibin zırhını +2 ile kopyalar.",
             "Saldırıya uğradığında rakibin zırhını +3 ile kopyalar.",
-            "Saldırıya uğradığında rakibin zırhını +3 ile kopyalar. (+3 Hasar)",
-            "Saldırıya uğradığında rakibin zırhını +3 ile kopyalar. (+3 Hasar, +12 Can)",
-            "Saldırıya uğradığında rakibin zırhını +6 ile kopyalar. (+3 Hasar, +12 Can)"
+            "Saldırıya uğradığında rakibin zırhını +3 ile kopyalar. (+6 Hasar)",
+            "Saldırıya uğradığında rakibin zırhını +3 ile kopyalar. (+6 Hasar, +4 Hız)",
+            "Saldırıya uğradığında rakibin zırhını +5 ile kopyalar. (+6 Hasar, +4 Hız)"
+        ]
+    },
+    {
+        id: 14,
+        name: "Öfke Ayini",
+        health: 70,
+        attack: 19,
+        speed: 4,
+        armor: 0,
+        description: "Savaş başında tüm dost kartların hızını 3, zırhını 2 azaltır; ancak saldırı güçlerini 6 arttırır.",
+        levelStats: {
+            health: [70, 70, 70, 70, 70],
+            attack: [19, 25, 25, 25, 25],
+            speed: [4, 4, 4, 4, 4],
+            armor: [0, 0, 0, 0, 0]
+        },
+        levelAbilities: {
+            speedDebuff: [3, 3, 3, 2, 4],
+            armorDebuff: [2, 2, 4, 3, 5],
+            attackBuff: [6, 6, 10, 10, 17]
+        },
+        levelDescriptions: [
+            "Savaş başında tüm dost kartların hızını 3, zırhını 2 azaltır; ancak saldırı güçlerini 6 arttırır.",
+            "Savaş başında tüm dost kartların hızını 3, zırhını 2 azaltır; ancak saldırı güçlerini 6 arttırır. (+6 Hasar)",
+            "Savaş başında tüm dost kartların hızını 3, zırhını 4 azaltır; ancak saldırı güçlerini 10 arttırır. (+6 Hasar)",
+            "Savaş başında tüm dost kartların hızını 2, zırhını 3 azaltır; ancak saldırı güçlerini 10 arttırır. (+6 Hasar)",
+            "Savaş başında tüm dost kartların hızını 4, zırhını 5 azaltır; ancak saldırı güçlerini 17 arttırır. (+6 Hasar)"
         ]
     },
     {
@@ -331,22 +359,22 @@ const cardsData = [
         attack: 9,
         speed: 6,
         armor: -10,
-        description: "Saldırana alınan hasarın %25'ini yansıtır.",
+        description: "Saldırana alınan hasarın %30'unu yansıtır.",
         levelStats: {
-            health: [200, 220, 220, 245, 245],
-            attack: [9, 9, 9, 9, 9],
+            health: [200, 230, 230, 230, 265],
+            attack: [9, 9, 9, 16, 16],
             speed: [6, 6, 6, 6, 6],
-            armor: [-10, -10, -20, -25, -25]
+            armor: [-10, -10, -10, -5, -5]
         },
         levelAbilities: {
-            reflectPercentage: [25, 25, 25, 25, 35]
+            reflectPercentage: [30, 30, 40, 40, 45]
         },
         levelDescriptions: [
-            "Saldırana alınan hasarın %25'ini yansıtır.",
-            "Saldırana alınan hasarın %25'ini yansıtır. (+20 Can)",
-            "Saldırana alınan hasarın %25'ini yansıtır. (+20 Can, -10 Zırh)",
-            "Saldırana alınan hasarın %25'ini yansıtır. (+45 Can, -15 Zırh)",
-            "Saldırana alınan hasarın %35'ini yansıtır. (+45 Can, -15 Zırh)"
+            "Saldırana alınan hasarın %30'unu yansıtır.",
+            "Saldırana alınan hasarın %30'unu yansıtır. (+30 Can)",
+            "Saldırana alınan hasarın %40'ını yansıtır. (+30 Can)",
+            "Saldırana alınan hasarın %40'ını yansıtır. (+30 Can, +7 Hasar, +5 Zırh)",
+            "Saldırana alınan hasarın %45'ini yansıtır. (+65 Can, +7 Hasar, +5 Zırh)"
         ]
     },
     {
@@ -421,6 +449,14 @@ class Card {
         this._originalAttack = data.attack;
         this._originalSpeed = data.speed;
         this._originalTakeDamage = null;
+
+        // Maç sonu istatistikleri
+        this.battleStats = {
+            damageDealt: 0,
+            damageBlocked: 0,
+            attacksCount: 0,
+            damageTaken: 0  // Giden can istatistiği
+        };
     }
 
     // Kart HTML elementini oluşturur
@@ -512,23 +548,28 @@ class Card {
 
     // Hasar alma
     takeDamage(amount, attacker = null, type = 'physical') {
-        // HATA KORUMASI: Gelen hasar zaten 0 veya daha az ise (kaçınma vb.),
-        // negatif zırhın hasarı artıran matematiksel bug'ını önlemek için zırhı tamamen bypass ediyoruz.
         if (amount <= 0) {
             return { actualDamage: 0, isDead: this.health <= 0 };
         }
 
         let actualDamage = amount;
         let armorLog = '';
-        if (typeof this.armor === 'number' && this.armor !== 0) {
+
+        // Yansıtma (reflect) ve Zehir (poison) hasarı zırhı tamamen yok sayar
+        if (type !== 'reflect' && type !== 'poison' && typeof this.armor === 'number' && this.armor !== 0) {
             const beforeArmor = actualDamage;
             actualDamage -= this.armor;
             if (actualDamage < 0) actualDamage = 0;
             
+            const blocked = beforeArmor - actualDamage;
+            if (blocked > 0) {
+                this.battleStats.damageBlocked += blocked;
+            }
+
             // Zırh log'unu sadece gerçek hasar varsa yaz
             if (actualDamage > 0 && attacker && attacker.gameState) {
                 if (this.armor > 0) {
-                    armorLog = `${this.name} zırhı sayesinde ${beforeArmor - actualDamage} hasarı engelledi! 🛡️`;
+                    armorLog = `${this.name} zırhı sayesinde ${blocked} hasarı engelledi! 🛡️`;
                     attacker.gameState.addToBattleLog(armorLog);
                 } else if (this.armor < 0) {
                     armorLog = `${this.name} düşük zırhı nedeniyle ${Math.abs(this.armor)} fazladan hasar aldı! 🛡️`;
@@ -536,7 +577,15 @@ class Card {
                 }
             }
         }
+
         this.health = Math.max(0, this.health - actualDamage);
+        this.battleStats.damageTaken += actualDamage; // Giden can kaydı
+
+        // Hasar veren karta istatistik yaz
+        if (attacker && actualDamage > 0) {
+            attacker.battleStats.damageDealt += actualDamage;
+        }
+
         this.updateCardElement();
         if (actualDamage > 0 && typeof UI !== 'undefined' && UI.showDamageText) {
             UI.showDamageText(this.element, actualDamage, type);
@@ -630,6 +679,7 @@ class Card {
         }
 
         this.hasAttackedThisTurn = true;
+        this.battleStats.attacksCount++; // Sadece aktif olarak saldırdığı turlarda 1 kez artar
         console.log(`${this.name} kartının hasAttackedThisTurn=true olarak işaretlendi`);
 
         this.gameState = gameState;
@@ -662,26 +712,25 @@ class Card {
     }
 }
 // Bilgisayar (AI) için önceden tanımlanmış esnek deste havuzu
-// İleride buraya sadece yeni nesneler ekleyerek deste sayısını dilediğiniz kadar artırabilirsiniz.
 const aiPreMadeDecks = [
     {
         id: "random",
         name: "Tamamen Rastgele Deste",
-        cardIds: [] // Boş olması, bilgisayarın tamamen rastgele 4 kart seçeceği anlamına gelir
+        cardIds: []
     },
     {
         id: "attack",
         name: "Hücum Deste (Saldırı Odaklı)",
-        cardIds: [1, 4, 6, 11] // Ateş Savaşçısı, Çevik Hançer, Kara Şövalye, İkiz Okçu
+        cardIds: [1, 4, 6, 11]
     },
     {
         id: "defense",
         name: "Savunma Duvarı (Defans & Şifa)",
-        cardIds: [3, 7, 12, 9] // Taş Kalkan, Şifacı, Büyü Tazısı, Savaş Borazanı
+        cardIds: [3, 7, 12, 9]
     },
     {
         id: "poison",
         name: "Zehirli Diken (Yansıtma & Zehir)",
-        cardIds: [8, 15, 13, 10] // Zehirli Ok, Dikenli Deri, Kalkan Kopyalayıcı, Kan Emici
+        cardIds: [8, 15, 13, 10]
     }
 ];
