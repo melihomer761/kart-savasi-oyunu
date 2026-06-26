@@ -9,48 +9,43 @@ class GameState {
         this.player1Cards = [];   // 1. oyuncunun kartları
         this.player2Cards = [];   // 2. oyuncunun kartları
         this.turnOrder = [];      // Tur sırası
-        this.currentTurn = 0;     // Şu anki tur sayısı (0'dan başlatıyoruz, ilk tur 1 olacak)
+        this.currentTurn = 0;     // Şu anki tur sayısı
         this.isGameStarted = false;
         this.isSelectionPhase = true;
         this.selectedCardsCount = 0;
         this.battleLog = [];
 
-        // Yeni özellikler
         this.gameMode = ''; // 'pvp' veya 'pvc'
-        this.currentSelectingPlayer = 1; // Hangi oyuncunun kart seçtiği (1 veya 2)
-        this.player1SelectedCards = []; // 1. oyuncunun seçtiği kartlar
-        this.player2SelectedCards = []; // 2. oyuncunun seçtiği kartlar
+        this.currentSelectingPlayer = 1;
+        this.player1SelectedCards = [];
+        this.player2SelectedCards = [];
 
-        // Manuel saldırı için yeni değişkenler
-        this.currentAttackingCard = null; // Şu anda saldıracak kart
-        this.waitingForTarget = false; // Hedef seçimi bekliyor mu?
-        this.currentPlayerTurn = 1; // Hangi oyuncunun sırası (1 veya 2)
-        this.turnOrderChanged = false; // Tur sırası değişti mi?
-        this.waitingForAnimation = false; // Animasyon bekleniyor mu
-        this.activeLeaderIDs = []; // Büyü Tazısı liderlik kartlarının instanceId listesi
+        this.currentAttackingCard = null;
+        this.waitingForTarget = false;
+        this.currentPlayerTurn = 1;
+        this.turnOrderChanged = false;
+        this.waitingForAnimation = false;
+        this.activeLeaderIDs = [];
         
-        // Her oyuncunun bağımsız seçimi ve puanları
         this.startingPoints = 18;
         this.player1AvailablePoints = 18;
         this.player2AvailablePoints = 18;
         this.maxCardLevel = 5;
-        this.pointsPerLevel = 1; // Level maliyeti basitçe mevcut seviye
 
-        // Bilgisayar (AI) başlangıç ayarları
         this.aiConfig = {
             deckId: "random",
-            levelMode: "balanced", // 'balanced' veya 'flat'
+            levelMode: "balanced",
             flatLevel: 1,
-            focusTarget: null     // Yapay zekanın ortak odaklandığı düşman hedefi
+            focusTarget: null
         };
     }
 
-    // Oyunu başlat
     initGame() {
         console.log("initGame çağrıldı: Oyun başlatılıyor...");
         this.resetGame();
 
-        document.querySelector('.game-container').style.display = 'none';
+        const container = document.querySelector('.game-container');
+        if (container) container.style.display = 'none';
         
         const cardSelection = document.getElementById('card-selection');
         if (cardSelection) {
@@ -71,39 +66,22 @@ class GameState {
             if (pvcButton) {
                 pvcButton.addEventListener('click', () => this.setGameMode('pvc'));
             }
-        } else {
-            console.error("Oyun modu seçim ekranı bulunamadı!");
-            alert("Oyun modu seçim ekranı yüklenemedi! Lütfen sayfayı yenileyin.");
         }
     }
 
-    // Oyun modu seçim ekranını göster
-    showGameModeSelection() {
-        const gameModeScreen = document.getElementById('game-mode-selection');
-        gameModeScreen.style.display = 'flex';
-
-        const pvpButton = document.getElementById('pvp-mode-btn');
-        const pvcButton = document.getElementById('pvc-mode-btn');
-
-        pvpButton.addEventListener('click', () => this.setGameMode('pvp'));
-        pvcButton.addEventListener('click', () => this.setGameMode('pvc'));
-    }
-
-    // Oyun modunu ayarla
     setGameMode(mode) {
         console.log(`Oyun modu seçildi: ${mode}`);
         this.gameMode = mode;
-        document.getElementById('game-mode-selection').style.display = 'none';
+        const gameModeScreen = document.getElementById('game-mode-selection');
+        if (gameModeScreen) gameModeScreen.style.display = 'none';
         
         this.initCards();
         
         if (mode === 'pvc') {
-            // PvC seçildiyse önce Yapay Zeka ayar ekranını aç
             if (typeof UI !== 'undefined' && UI.showAiConfigScreen) {
                 UI.showAiConfigScreen();
             }
         } else {
-            // PvP seçildiyse doğrudan oyuncu kart seçim ekranına geç
             setTimeout(() => {
                 this.showCardSelection();
                 this.updatePlayerIndicator();
@@ -111,29 +89,25 @@ class GameState {
         }
     }
 
-    // Bilgisayar ayarlarını onayla
     confirmAiConfig(aiConfig) {
         this.aiConfig = {
             deckId: aiConfig.deckId,
             levelMode: aiConfig.levelMode,
             flatLevel: aiConfig.flatLevel,
-            focusTarget: null // Yeni oyunda odak hedefi temizlenir
+            focusTarget: null
         };
         
-        // Bilgisayar ayar ekranını kapat, oyuncu kart seçim ekranını aç
-        document.getElementById('pvc-config-screen').style.display = 'none';
+        const configScreen = document.getElementById('pvc-config-screen');
+        if (configScreen) configScreen.style.display = 'none';
         this.showCardSelection();
         this.updatePlayerIndicator();
     }
 
-    // Bilgisayarın destesini kurallara uygun olarak otomatik üretir
     generateAiDeck() {
         let selectedCards = [];
         let chosenDeck = aiPreMadeDecks.find(d => d.id === this.aiConfig.deckId);
         
-        // 1. Bilgisayar Kartlarının Belirlenmesi
         if (!chosenDeck || chosenDeck.id === "random") {
-            // Rastgele 4 benzersiz kart seç
             let availablePool = [...this.availableCards];
             for (let i = 0; i < 4; i++) {
                 let rndIdx = Math.floor(Math.random() * availablePool.length);
@@ -141,7 +115,6 @@ class GameState {
                 availablePool.splice(rndIdx, 1);
             }
         } else {
-            // Seçilen hazır destedeki kartları şablondan kopyala
             chosenDeck.cardIds.forEach(id => {
                 let cardTemplate = this.availableCards.find(c => c.baseId === id);
                 if (cardTemplate) {
@@ -150,31 +123,25 @@ class GameState {
             });
         }
 
-        // 2. Seviye ve Güç Dağılımının Yapılması
         if (this.aiConfig.levelMode === "flat") {
-            // Sabit Seviye Modu: Tüm kartları oyuncunun seçtiği seviyeye kilitle
             selectedCards.forEach(card => {
                 card.updateLevelStats(this.aiConfig.flatLevel);
             });
         } else {
-            // Dengeli Bütçe Modu: 18 Puanı kurallara uygun rastgele dağıt
             selectedCards.forEach(card => {
-                card.updateLevelStats(1); // Önce hepsi Lv 1 yapılır
+                card.updateLevelStats(1);
             });
 
             let remainingPoints = 18;
-            
             while (remainingPoints > 0) {
-                // Sadece yükseltilebilir (Lv < 5) ve bir sonraki seviye maliyeti yeten kartları bul
                 let upgradableCards = selectedCards.filter(card => {
                     return card.level < 5 && card.level <= remainingPoints;
                 });
 
-                if (upgradableCards.length === 0) break; // Harcanacak kart veya yeten puan kalmadıysa çık
+                if (upgradableCards.length === 0) break;
 
-                // Yeten kartlardan rastgele birini seç ve seviyesini 1 artır
                 let rndCard = upgradableCards[Math.floor(Math.random() * upgradableCards.length)];
-                let cost = rndCard.level; // Lv 1->2 maliyeti 1, 2->3 maliyeti 2 vb.
+                let cost = rndCard.level;
                 
                 rndCard.level += 1;
                 rndCard.updateLevelStats(rndCard.level);
@@ -182,30 +149,19 @@ class GameState {
             }
         }
 
-        // Bilgisayarın kartlarını kaydet ve sahipliğini ata
         this.player2Cards = selectedCards;
         this.player2Cards.forEach(card => { card.owner = 2; });
-        
         console.log("Bilgisayarın destesi hazırlandı:", this.player2Cards.map(c => `${c.name} (Lv ${c.level})`));
     }
 
-    // Kartları hazırla
     initCards() {
         console.log("Kartlar hazırlanıyor...");
         this.availableCards = cardsData.map(card => new Card(card, this.cardEffects));
-        console.log(`Toplam ${this.availableCards.length} kart yüklendi`);
     }
 
-    // Kart seçim ekranını göster
     showCardSelection() {
-        console.log("Kart seçim ekranı gösteriliyor...");
-        
         const cardSelection = document.getElementById('card-selection');
-        if (!cardSelection) {
-            console.error("Kart seçim ekranı bulunamadı!");
-            alert("Kart seçim ekranı bulunamadı! Lütfen sayfayı yenileyin.");
-            return;
-        }
+        if (!cardSelection) return;
         
         cardSelection.style.display = 'flex';
         
@@ -215,10 +171,7 @@ class GameState {
         }
         
         const availableCardsContainer = document.getElementById('available-cards');
-        if (!availableCardsContainer) {
-            console.error("Kullanılabilir kartlar container'ı bulunamadı!");
-            return;
-        }
+        if (!availableCardsContainer) return;
         
         availableCardsContainer.innerHTML = '';
         
@@ -247,10 +200,7 @@ class GameState {
         }, 300);
     }
 
-    // Kart seçimini değiştir
     toggleCardSelection(card) {
-        console.log(`Karta tıklandı: ${card.name} (ID: ${card.id})`);
-        
         const currentSelectedCards = this.getCurrentPlayerSelectedCards();
         const isAlreadySelected = typeof UI !== 'undefined' && UI.isSelected ? UI.isSelected(card) : false;
         
@@ -285,20 +235,14 @@ class GameState {
             }
         }
         
-        document.getElementById('selected-count').textContent = currentSelectedCards.length;
+        const selectedCount = document.getElementById('selected-count');
+        if (selectedCount) selectedCount.textContent = currentSelectedCards.length;
         this.updateSelectedCardsDisplay();
         this.updateButtons();
-        
-        if (!isAlreadySelected && currentSelectedCards.length === 1) {
-            document.getElementById('selected-cards-container').scrollIntoView({ behavior: 'smooth' });
-        }
     }
 
-    // Seçili kartları göster
     updateSelectedCardsDisplay() {
-        console.log("Seçili kartlar güncelleniyor");
         const selectedCards = this.getCurrentPlayerSelectedCards();
-        
         if (selectedCards.length === 0) {
             const selectedCardsContainer = document.getElementById('selected-cards-container');
             if (selectedCardsContainer) {
@@ -309,21 +253,16 @@ class GameState {
                 selectedCardsContainer.appendChild(emptyMessage);
             }
             
-            // Puan değerini sıfırla
             const pointsSpan = document.getElementById('available-points');
-            if (pointsSpan) {
-                pointsSpan.textContent = "0";
-            }
+            if (pointsSpan) pointsSpan.textContent = "0";
             return;
         }
         
-        // Burayı UI.updateSelectedCardsDisplay olarak düzelterek puan güncellemelerini de entegre ettim
         if (typeof UI !== 'undefined' && UI.updateSelectedCardsDisplay) {
             UI.updateSelectedCardsDisplay(selectedCards, this);
         }
     }
 
-    // Butonları güncelle
     updateButtons() {
         const startButton = document.getElementById('start-game-btn');
         const nextPlayerButton = document.getElementById('next-player-btn');
@@ -333,18 +272,17 @@ class GameState {
         
         if (this.gameMode === 'pvp') {
             if (this.currentSelectingPlayer === 1) {
-                nextPlayerButton.disabled = !player1CardsReady;
-                startButton.disabled = true;
+                if (nextPlayerButton) nextPlayerButton.disabled = !player1CardsReady;
+                if (startButton) startButton.disabled = true;
             } else {
-                nextPlayerButton.style.display = 'none';
-                startButton.disabled = !player2CardsReady;
+                if (nextPlayerButton) nextPlayerButton.style.display = 'none';
+                if (startButton) startButton.disabled = !player2CardsReady;
             }
         } else {
-            startButton.disabled = !player1CardsReady;
+            if (startButton) startButton.disabled = !player1CardsReady;
         }
     }
 
-    // Mevcut oyuncunun seçtiği kartları döndür
     getCurrentPlayerSelectedCards() {
         return this.currentSelectingPlayer === 1 ? this.player1SelectedCards : this.player2SelectedCards;
     }
@@ -362,7 +300,7 @@ class GameState {
     }
 
     getUpgradeCost(fromLevel) {
-        return fromLevel; // Her level'dan bir sonrakine geçiş maliyeti mevcut seviyeye eşittir.
+        return fromLevel;
     }
 
     getTotalUpgradeCost(level) {
@@ -386,18 +324,13 @@ class GameState {
     upgradeCard(instanceId) {
         const selectedCards = this.getCurrentPlayerSelectedCards();
         const card = selectedCards.find(c => c.instanceId === instanceId);
-        if (!card) {
-            console.error(`upgradeCard: kart bulunamadı: ${instanceId}`);
-            return false;
-        }
-        if (card.level >= this.maxCardLevel) {
-            return false;
-        }
+        if (!card) return false;
+        if (card.level >= this.maxCardLevel) return false;
+
         const cost = this.getUpgradeCost(card.level);
         const currentPoints = this.getCurrentPlayerPoints();
-        if (currentPoints < cost) {
-            return false;
-        }
+        if (currentPoints < cost) return false;
+
         card.level += 1;
         card.updateLevelStats(card.level);
         this.setCurrentPlayerPoints(currentPoints - cost);
@@ -408,13 +341,9 @@ class GameState {
     downgradeCard(instanceId) {
         const selectedCards = this.getCurrentPlayerSelectedCards();
         const card = selectedCards.find(c => c.instanceId === instanceId);
-        if (!card) {
-            console.error(`downgradeCard: kart bulunamadı: ${instanceId}`);
-            return false;
-        }
-        if (card.level <= 1) {
-            return false;
-        }
+        if (!card) return false;
+        if (card.level <= 1) return false;
+
         const refund = this.getUpgradeCost(card.level - 1);
         card.level -= 1;
         card.updateLevelStats(card.level);
@@ -424,13 +353,11 @@ class GameState {
         return true;
     }
 
-    // Hangi oyuncunun seçim yaptığını göster
     updatePlayerIndicator() {
         const playerIndicator = document.getElementById('player-turn-indicator');
-        playerIndicator.textContent = `Oyuncu ${this.currentSelectingPlayer}`;
+        if (playerIndicator) playerIndicator.textContent = `Oyuncu ${this.currentSelectingPlayer}`;
     }
 
-    // Sıradaki oyuncuya geç (PVP modunda)
     switchToNextPlayer() {
         if (this.player1SelectedCards.length !== 4) {
             alert('Lütfen 4 kart seçin!');
@@ -442,24 +369,29 @@ class GameState {
         this.updatePlayerIndicator();
         
         const availableCardsContainer = document.getElementById('available-cards');
-        availableCardsContainer.innerHTML = '';
-        
-        this.availableCards.forEach(card => {
-            const cardElement = card.createCardElement();
-            cardElement.addEventListener('click', () => {
-                this.toggleCardSelection(card);
+        if (availableCardsContainer) {
+            availableCardsContainer.innerHTML = '';
+            this.availableCards.forEach(card => {
+                const cardElement = card.createCardElement();
+                cardElement.addEventListener('click', () => {
+                    this.toggleCardSelection(card);
+                });
+                availableCardsContainer.appendChild(cardElement);
             });
-            availableCardsContainer.appendChild(cardElement);
-        });
+        }
         
-        document.getElementById('selected-count').textContent = 0;
-        document.getElementById('selected-cards-container').innerHTML = '';
-        document.getElementById('available-points').textContent = this.getCurrentPlayerUsedPoints();
+        const selectedCount = document.getElementById('selected-count');
+        if (selectedCount) selectedCount.textContent = 0;
+        
+        const container = document.getElementById('selected-cards-container');
+        if (container) container.innerHTML = '';
+        
+        const pointsSpan = document.getElementById('available-points');
+        if (pointsSpan) pointsSpan.textContent = this.getCurrentPlayerUsedPoints();
         
         this.updateButtons();
     }
 
-    // Oyuna başla
     startGame() {
         console.log("Oyun başlatılıyor...");
         
@@ -471,27 +403,19 @@ class GameState {
             this.player1Cards = this.player1SelectedCards.map(card => card.clone());
             this.player2Cards = this.player2SelectedCards.map(card => card.clone());
         } else {
-            // PvC Modu
             if (this.player1SelectedCards.length !== 4) {
                 alert("Lütfen 4 kart seçin!");
                 return;
             }
             this.player1Cards = this.player1SelectedCards.map(card => card.clone());
-            
-            // Bilgisayarın destesini ayarlara uygun dinamik olarak üret!
             this.generateAiDeck();
         }
 
-        // ARAYÜZ GEÇİŞ DÜZELTMELERİ: Seçim ekranını gizle ve savaş alanını aç
         const cardSelection = document.getElementById('card-selection');
-        if (cardSelection) {
-            cardSelection.style.display = 'none';
-        }
+        if (cardSelection) cardSelection.style.display = 'none';
         
         const gameContainer = document.querySelector('.game-container');
-        if (gameContainer) {
-            gameContainer.style.display = 'flex';
-        }
+        if (gameContainer) gameContainer.style.display = 'flex';
 
         this.renderGameBoard();
 
@@ -539,19 +463,22 @@ class GameState {
         const player1Container = document.getElementById('player1-cards');
         const player2Container = document.getElementById('player2-cards');
         
-        player1Container.innerHTML = '';
-        player2Container.innerHTML = '';
+        if (player1Container) {
+            player1Container.innerHTML = '';
+            this.player1Cards.forEach(card => {
+                player1Container.appendChild(card.createCardElement());
+            });
+        }
         
-        this.player1Cards.forEach(card => {
-            player1Container.appendChild(card.createCardElement());
-        });
-        
-        this.player2Cards.forEach(card => {
-            player2Container.appendChild(card.createCardElement());
-        });
+        if (player2Container) {
+            player2Container.innerHTML = '';
+            this.player2Cards.forEach(card => {
+                player2Container.appendChild(card.createCardElement());
+            });
+        }
         
         const turnIndicator = document.querySelector('.turn-indicator');
-        if (!document.getElementById('turn-status')) {
+        if (turnIndicator && !document.getElementById('turn-status')) {
             const statusElement = document.createElement('div');
             statusElement.id = 'turn-status';
             statusElement.textContent = 'Bekliyor...';
@@ -632,10 +559,6 @@ class GameState {
             }
         }
 
-        if (typeof applyTurnStartEffects === 'function') {
-            applyTurnStartEffects(this);
-        }
-
         if (this.turnOrderChanged) {
             this.determineTurnOrder();
             this.turnOrderChanged = false;
@@ -675,16 +598,15 @@ class GameState {
             
             this.highlightActiveCard(kart);
             
-            // BİLGİSAYAR TURU KONTROLÜ VE OTOMATİK TETİKLEME
             if (this.gameMode === 'pvc' && this.currentPlayerTurn === 2) {
-                this.waitingForTarget = false; // Bilgisayarın sırasında oyuncu tıklamalarını devre dışı bırak
+                this.waitingForTarget = false;
                 const turnStatus = document.getElementById('turn-status');
                 if (turnStatus) {
                     turnStatus.textContent = 'Bilgisayar Düşünüyor... 🤖';
                 }
                 setTimeout(() => {
                     this.executeAiTurn();
-                }, 1200); // Oyuncunun hamleyi algılayabilmesi için 1.2 saniye bekletiyoruz
+                }, 1200);
             } else {
                 this.waitingForTarget = true;
                 const turnStatus = document.getElementById('turn-status');
@@ -706,17 +628,14 @@ class GameState {
         }
     }
 
-    // BİLGİSAYAR YAPAY ZEKA KARAR MOTORU (AI BATTLEFIELD DECISION ENGINE)
-    // BİLGİSAYAR YAPAY ZEKA KARAR MOTORU (AI BATTLEFIELD DECISION ENGINE - HATASIZ SÜRÜM)
+    // Gelişmiş Çoklu Saldırı Simülasyonlu Karar Motoru
     executeAiTurn() {
         let attacker = this.currentAttackingCard;
         if (!attacker || attacker.health <= 0) return;
 
-        // Oyuncunun hayattaki kartları (Bilgisayarın düşmanları)
         let enemies = this.player1Cards.filter(c => c.health > 0);
         if (enemies.length === 0) return;
 
-        // ADIM 1: Büyü Tazısı (Taunt) Kontrolü
         let validTargets = enemies;
         let leaderCards = enemies.filter(c => c.baseId === 12);
         let hasTauntActive = leaderCards.length > 0;
@@ -724,35 +643,58 @@ class GameState {
             validTargets = leaderCards;
         }
 
-        // Simüle Hasar Hesaplama Yardımcı Fonksiyonu (Zırh ve Taş Kalkanı dahil eder)
+        // Simüle Hasar Hesaplama (Multi-attack ve Kalkan Kopyalayıcı Korumalı)
         const getSimulatedDamage = (att, trg) => {
             let baseDmg = att.attack;
+            let totalSimulated = 0;
             
-            // Taş Kalkan hasar azaltma yüzdesi okuma
+            let attackCount = 1;
+            if (att.baseId === 4) {
+                attackCount = att.levelAbilities && att.levelAbilities.attackCount
+                    ? att.levelAbilities.attackCount[att.level - 1]
+                    : 3;
+            } else if (att.baseId === 10) {
+                attackCount = 2;
+            }
+
             let damageReduction = 0;
             if (trg.baseId === 3) {
                 damageReduction = trg.levelAbilities && trg.levelAbilities.damageReduction
                     ? trg.levelAbilities.damageReduction[trg.level - 1]
-                    : 20;
+                    : 30;
+            }
+
+            let currentTargetArmor = trg.armor;
+            let armorCopyBonus = 0;
+            if (trg.baseId === 13) {
+                armorCopyBonus = trg.levelAbilities && trg.levelAbilities.armorCopyBonus
+                    ? trg.levelAbilities.armorCopyBonus[trg.level - 1]
+                    : 2;
+            }
+
+            for (let i = 0; i < attackCount; i++) {
+                let hitDmg = baseDmg;
+                if (damageReduction > 0) {
+                    hitDmg = Math.floor(hitDmg * (1 - damageReduction / 100));
+                }
+
+                // Kalkan Kopyalayıcı ise ilk vuruştan sonra zırh kopyalayacak
+                let effectiveArmor = currentTargetArmor;
+                if (trg.baseId === 13 && i > 0) {
+                    effectiveArmor = (att.armor || 0) + armorCopyBonus;
+                }
+
+                let actualHitDmg = hitDmg;
+                if (hitDmg > 0 && typeof effectiveArmor === 'number') {
+                    actualHitDmg = hitDmg - effectiveArmor;
+                    if (actualHitDmg < 0) actualHitDmg = 0;
+                }
+                totalSimulated += actualHitDmg;
             }
             
-            let rawDmg = baseDmg;
-            if (damageReduction > 0) {
-                rawDmg = Math.floor(rawDmg * (1 - damageReduction / 100));
-            }
-            
-            let actualDmg = rawDmg;
-            if (rawDmg <= 0) {
-                actualDmg = 0;
-            } else if (typeof trg.armor === 'number') {
-                actualDmg = rawDmg - trg.armor;
-                if (actualDmg < 0) actualDmg = 0;
-            }
-            
-            return actualDmg;
+            return totalSimulated;
         };
 
-        // Tehdit Skoru Hesaplama Fonksiyonu
         const getThreatScore = (card) => {
             let atk = card.attack || 0;
             let spd = card.speed || 0;
@@ -763,28 +705,23 @@ class GameState {
 
         let target = null;
 
-        // 1. ADIM: KURAL 1 - Bitirici Vuruş Kontrolü (Lethal Strike & Turn Tempo)
+        // 1. Bitirici Vuruş Kontrolü
         let killableTargets = validTargets.filter(t => getSimulatedDamage(attacker, t) >= t.health);
 
         if (killableTargets.length > 0) {
-            // Öldürülebilir düşmanları bu tur saldırma (aksiyon) durumlarına göre ayırıyoruz
             let unactedKillable = killableTargets.filter(t => !t.hasAttackedThisTurn);
             let actedKillable = killableTargets.filter(t => t.hasAttackedThisTurn);
 
             if (unactedKillable.length > 0) {
-                // A. Bu tur henüz saldırmamış (sırası gelmemiş) olanlardan saldırı gücü en yüksek olanı hedef al (Tempo Çalma!)
                 unactedKillable.sort((a, b) => b.attack - a.attack);
                 target = unactedKillable[0];
             } else {
-                // B. Herkes zaten saldırdıysa, sonraki tura yatırım için en tehlikeli olanı öldür
                 actedKillable.sort((a, b) => b.attack - a.attack);
                 target = actedKillable[0];
             }
         } 
-        // 2. ADIM: KURAL 3 - Kart Bazlı Özel Stratejiler (Sadece Taunt aktif değilse devreye girer)
+        // 2. Özel Stratejiler
         else if (!hasTauntActive) {
-            
-            // A. Ateş Savaşçısı (ID 1) - Maksimum Splash Hasarı Almak için Ortadaki Kartları Seçme
             if (attacker.baseId === 1) {
                 let bestSplashTarget = null;
                 let maxAdjacent = -1;
@@ -805,18 +742,14 @@ class GameState {
                     target = bestSplashTarget;
                 }
             }
-            
-            // B. Çevik Hançer (ID 4) & Kan Emici (ID 10) - Yüksek Zırhlılardan Kaçınma
             else if (attacker.baseId === 4 || attacker.baseId === 10) {
-                let lowArmorTargets = validTargets.filter(t => t.armor <= 2);
+                // Kalkan Kopyalayıcı'dan (ID 13) zırh kopyalamasını önlemek için kaçın
+                let lowArmorTargets = validTargets.filter(t => t.armor <= 2 && t.baseId !== 13);
                 if (lowArmorTargets.length > 0) {
-                    // Düşük zırhlılar arasından en tehlikeli olanı seç
                     lowArmorTargets.sort((a, b) => getThreatScore(b) - getThreatScore(a));
                     target = lowArmorTargets[0];
                 }
             }
-            
-            // C. Buz Büyücüsü (ID 2) - Yavaşlamamış Düşmana Efekt Yayma
             else if (attacker.baseId === 2) {
                 let unbuffedTargets = validTargets.filter(t => t.speed === t.startingValues.speed);
                 if (unbuffedTargets.length > 0) {
@@ -824,8 +757,6 @@ class GameState {
                     target = unbuffedTargets[0];
                 }
             }
-            
-            // D. Zehirli Ok (ID 8) - Zehirlenmemiş Düşmana Zehir Yayma
             else if (attacker.baseId === 8) {
                 let unpoisonedTargets = validTargets.filter(t => !t.effects || !t.effects.poison);
                 if (unpoisonedTargets.length > 0) {
@@ -835,23 +766,20 @@ class GameState {
             }
         }
 
-        // 3. ADIM: KURAL 2 - Odaklanma ve Tehdit Skoruna Göre Saldırma (Genel Durum)
+        // 3. Odaklanma Hedefi
         if (!target) {
-            // Eğer aktif bir "Takım Odak Hedefi" varsa ve hâlâ hayattaysa ona saldırmaya devam et
             if (this.aiFocusTarget && this.aiFocusTarget.health > 0 && validTargets.includes(this.aiFocusTarget)) {
                 target = this.aiFocusTarget;
             } else {
-                // Yoksa, tüm geçerli hedeflere tehdit skoru hesapla ve en yükseğini "Odak" seç
                 validTargets.forEach(t => {
                     t._aiThreat = getThreatScore(t);
                 });
                 validTargets.sort((a, b) => b._aiThreat - a._aiThreat);
                 target = validTargets[0];
-                this.aiFocusTarget = target; // Diğer AI kartları için odağı kaydet
+                this.aiFocusTarget = target;
             }
         }
 
-        // Hedef belirlendikten sonra saldırıyı gerçekleştir
         if (target) {
             this.executeAttack(target);
         }
@@ -907,23 +835,18 @@ class GameState {
 
     updateActivePlayerIndicator() {
         const activePlayer = document.getElementById('active-player');
-        if (this.gameMode === 'pvc' && this.currentPlayerTurn === 2) {
-            activePlayer.textContent = 'Bilgisayar';
-        } else {
-            activePlayer.textContent = `Oyuncu ${this.currentPlayerTurn}`;
+        if (activePlayer) {
+            if (this.gameMode === 'pvc' && this.currentPlayerTurn === 2) {
+                activePlayer.textContent = 'Bilgisayar';
+            } else {
+                activePlayer.textContent = `Oyuncu ${this.currentPlayerTurn}`;
+            }
+            activePlayer.className = this.currentPlayerTurn === 1 ? 'player1-turn' : 'player2-turn';
         }
-        activePlayer.className = this.currentPlayerTurn === 1 ? 'player1-turn' : 'player2-turn';
     }
 
     async executeAttack(targetCard) {
-        if (!this.currentAttackingCard || !this.waitingForTarget || targetCard.health <= 0) {
-            // Bilgisayarın sırasıysa waitingForTarget kontrolünü bypass et
-            if (this.gameMode === 'pvc' && this.currentPlayerTurn === 2) {
-                // Bilgisayar için geçiş izni ver
-            } else {
-                return;
-            }
-        }
+        if (!this.currentAttackingCard || targetCard.health <= 0) return;
         
         const hedefKartlar = this.currentPlayerTurn === 1 ? this.player2Cards : this.player1Cards;
         const hedefUygun = hedefKartlar.some(k => k.instanceId === targetCard.instanceId);
@@ -957,10 +880,6 @@ class GameState {
                         UI.setDead(targetCard);
                     }
                     this.determineTurnOrder();
-                }
-                
-                if (typeof applyAttackEffects === 'function') {
-                    applyAttackEffects(this.currentAttackingCard, targetCard, this);
                 }
             }
             
@@ -1024,9 +943,14 @@ class GameState {
         this.isGameStarted = false;
         this.addToBattleLog(`${winner} KAZANDI! 🏆`);
         
-        setTimeout(() => {
-            this.askForNewGame();
-        }, 1000);
+        // Modal panelde maç sonu istatistiklerini göster
+        if (typeof UI !== 'undefined' && UI.showMatchStats) {
+            UI.showMatchStats(this, winner);
+        } else {
+            setTimeout(() => {
+                this.askForNewGame();
+            }, 1000);
+        }
     }
 
     askForNewGame() {
@@ -1045,7 +969,6 @@ class GameState {
         this.battleLog.push(message);
     }
 
-
     resetGame() {
         this.availableCards = [];
         this.player1Cards = [];
@@ -1061,7 +984,7 @@ class GameState {
         this.battleLog = [];
         this.player1AvailablePoints = 18;
         this.player2AvailablePoints = 18;
-        this.aiFocusTarget = null; // Odak hedefi sıfırlanır
+        this.aiFocusTarget = null;
         
         const logContent = document.getElementById('battle-log-content');
         if (logContent) logContent.innerHTML = '';
