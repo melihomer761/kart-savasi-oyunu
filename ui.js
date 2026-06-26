@@ -3,16 +3,14 @@
 // ==========================================================================
 
 const UI = {
-    // Kart seçimi sırasında arayüzü güncelle
     updateCardSelection: (selectedCards) => {
         const selectedCount = document.getElementById('selected-count');
-        selectedCount.textContent = selectedCards.length;
+        if (selectedCount) selectedCount.textContent = selectedCards.length;
         
         const startButton = document.getElementById('start-game-btn');
-        startButton.disabled = selectedCards.length !== 4;
+        if (startButton) startButton.disabled = selectedCards.length !== 4;
     },
     
-    // Kart animasyonları
     animateCard: (cardElement, animationType) => {
         cardElement.classList.add(animationType);
         setTimeout(() => {
@@ -20,37 +18,28 @@ const UI = {
         }, 500);
     },
     
-    // Kart seçim ekranını göster/gizle
     toggleCardSelection: (show) => {
         const cardSelection = document.getElementById('card-selection');
         if (cardSelection) {
             cardSelection.style.display = show ? 'flex' : 'none';
-            console.log(`Kart seçim ekranı ${show ? 'gösterildi' : 'gizlendi'}`);
-        } else {
-            console.error("Kart seçim ekranı bulunamadı!");
         }
     },
     
-    // Tur göstergesini güncelle
     updateTurnIndicator: (turnNumber) => {
         const turnIndicator = document.getElementById('turn-number');
-        turnIndicator.textContent = turnNumber;
+        if (turnIndicator) turnIndicator.textContent = turnNumber;
     },
     
-    // Savaş günlüğünü güncelle
     updateBattleLog: (message) => {
         const battleLog = document.getElementById('battle-log-content');
         if (battleLog) {
             const logEntry = document.createElement('div');
             logEntry.textContent = message;
             battleLog.appendChild(logEntry);
-            
-            // Otomatik kaydırma
             battleLog.scrollTop = battleLog.scrollHeight;
         }
     },
     
-    // Oyun tahtasını güncelle
     updateGameBoard: (player1Cards, player2Cards) => {
         const player1Container = document.getElementById('player1-cards');
         const player2Container = document.getElementById('player2-cards');
@@ -59,7 +48,6 @@ const UI = {
         UI.updatePlayerCards(player2Container, player2Cards);
     },
     
-    // Oyuncu kartlarını güncelle
     updatePlayerCards: (container, cards) => {
         cards.forEach(card => {
             UI.updateCard(card);
@@ -69,112 +57,85 @@ const UI = {
         });
     },
 
-    // Kart elementini günceller (savaş sırasında) - tüm DOM manipülasyonları burada
     updateCard: (card) => {
         if (!card.element) return;
 
         const stats = card.element.querySelectorAll('.card-stat');
-        const healthStat = stats[0]; // İlk stat sağlık
-        const attackStat = stats[1]; // İkinci stat saldırı
-        const speedStat = stats[2]; // Üçüncü stat hız
-        const armorStat = stats[3]; // Dördüncü stat zırh
+        const healthStat = stats[0];
+        const attackStat = stats[1];
+        const speedStat = stats[2];
+        const armorStat = stats[3];
         
-        // Seviye yazısını güncelle
         const levelBadge = card.element.querySelector('.card-level');
         if (levelBadge) {
             levelBadge.textContent = `Lv ${card.level}`;
         }
 
-        // Açıklama metnini güncelle
         const descElement = card.element.querySelector('.card-description');
         if (descElement) {
             descElement.textContent = card.description;
         }
 
-        // Doğrudan seviye verisinden o anki taban değerleri okuyoruz
         const idx = card.level - 1;
         let baseAttack = card.startingValues.attack;
         let baseSpeed = card.startingValues.speed;
         let baseArmor = card.startingValues.armor;
 
-        if (card.levels && card.levels[card.level]) {
-            const lvlData = card.levels[card.level];
-            if (lvlData.attack !== undefined) baseAttack = lvlData.attack;
-            if (lvlData.speed !== undefined) baseSpeed = lvlData.speed;
-            if (lvlData.armor !== undefined) baseArmor = lvlData.armor;
-        } else if (card.levelStats) {
+        if (card.levelStats) {
             if (card.levelStats.attack && card.levelStats.attack[idx] !== undefined) baseAttack = card.levelStats.attack[idx];
             if (card.levelStats.speed && card.levelStats.speed[idx] !== undefined) baseSpeed = card.levelStats.speed[idx];
             if (card.levelStats.armor && card.levelStats.armor[idx] !== undefined) baseArmor = card.levelStats.armor[idx];
         }
 
-        // Saldırı değerini güncelle
         if (attackStat) {
             attackStat.innerHTML = `⚔️<br>${card.attack}`;
             if (card.attack > baseAttack) {
-                attackStat.classList.add('buffed');
-                attackStat.classList.remove('debuffed');
-            } else if (card.attack < baseAttack) {
-                attackStat.classList.add('debuffed');
-                attackStat.classList.remove('buffed');
+                attackStat.className = 'card-stat buffed';
             } else {
-                attackStat.classList.remove('buffed', 'debuffed');
+                attackStat.className = 'card-stat';
             }
         }
         
-        // Hız değerini güncelle
         if (speedStat) {
             speedStat.innerHTML = `⚡<br>${card.speed}`;
             if (card.speed > baseSpeed) {
-                speedStat.classList.add('buffed');
-                speedStat.classList.remove('slowed', 'debuffed');
+                speedStat.className = 'card-stat buffed';
             } else if (card.speed < baseSpeed) {
-                speedStat.classList.add('slowed');
-                speedStat.classList.remove('buffed', 'debuffed');
+                speedStat.className = 'card-stat slowed';
             } else {
-                speedStat.classList.remove('buffed', 'slowed', 'debuffed');
+                speedStat.className = 'card-stat';
             }
         }
         
-        // Can değerini güncelle
         if (healthStat) {
             healthStat.innerHTML = `❤️<br>${card.health}`;
             if (card.health > card.maxHealth) {
-                healthStat.classList.add('over-healed');
+                healthStat.className = 'card-stat over-healed';
             } else {
-                healthStat.classList.remove('over-healed');
+                healthStat.className = 'card-stat';
             }
         }
         
-        // Zırh değerini güncelle
         if (armorStat) {
             armorStat.innerHTML = `🛡️<br>${card.armor}`;
             if (card.armor > baseArmor) {
-                armorStat.classList.add('buffed');
-                armorStat.classList.remove('debuffed');
+                armorStat.className = 'card-stat buffed';
             } else if (card.armor < baseArmor) {
-                armorStat.classList.add('debuffed');
-                armorStat.classList.remove('buffed');
+                armorStat.className = 'card-stat debuffed';
             } else {
-                armorStat.classList.remove('buffed', 'debuffed');
+                armorStat.className = 'card-stat';
             }
         }
         
-        // Hasar aldığında görsel geri bildirim
         if (card.health < card.maxHealth) {
             const healthPercent = (card.health / card.maxHealth) * 100;
-            card.element.style.setProperty('--health-percent', `${healthPercent}%`);
-            
             if (healthPercent < 30) {
                 card.element.classList.add('critical');
-            } else if (healthPercent < 60) {
-                card.element.classList.add('damaged');
-                card.element.classList.remove('critical');
             } else {
-                card.element.classList.remove('damaged', 'critical');
+                card.element.classList.remove('critical');
             }
         } else {
-            card.element.classList.remove('damaged', 'critical');
+            card.element.classList.remove('critical');
         }
         
         if (card.health <= 0) {
@@ -192,29 +153,9 @@ const UI = {
         }, duration);
     },
 
-    removeAnimationClass: (card, className) => {
-        if (!card.element) return;
-        card.element.classList.remove(className);
-    },
-
-    addPermanentClass: (card, className) => {
-        if (!card.element) return;
-        card.element.classList.add(className);
-    },
-
-    removePermanentClass: (card, className) => {
-        if (!card.element) return;
-        card.element.classList.remove(className);
-    },
-
     setDead: (card) => {
         if (!card.element) return;
         card.element.classList.add('dead');
-    },
-
-    setAlive: (card) => {
-        if (!card.element) return;
-        card.element.classList.remove('dead');
     },
 
     setPoisoned: (card, isPoisoned) => {
@@ -336,23 +277,137 @@ const UI = {
         return card.element.classList.contains('selected');
     },
 
-    toggleSelected: (card) => {
-        if (!card.element) return false;
-        return card.element.classList.toggle('selected');
+    // Yeni Özellik: Detaylı Maç Sonu İstatistik Modalı
+    showMatchStats: (gameState, winner) => {
+        const modalId = 'match-stats-modal';
+        let modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            overflow-y: auto;
+            padding: 20px;
+        `;
+
+        const content = document.createElement('div');
+        content.style.cssText = `
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 750px;
+            width: 100%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.4s ease;
+        `;
+
+        const header = document.createElement('h2');
+        header.textContent = `🏆 Savaş Bitti: ${winner} Kazandı!`;
+        header.style.cssText = "margin-bottom: 20px; color: #4CAF50;";
+        content.appendChild(header);
+
+        const subheader = document.createElement('h3');
+        subheader.textContent = "Maç Sonu İstatistikleri";
+        subheader.style.cssText = "margin-bottom: 15px; color: #333; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 8px;";
+        content.appendChild(subheader);
+
+        const table = document.createElement('table');
+        table.style.cssText = "width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; text-align: left;";
+        
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
+                <th style="padding: 10px;">Kart</th>
+                <th style="padding: 10px; text-align: center;">Sahibi</th>
+                <th style="padding: 10px; text-align: center;">Saldırdığı Tur</th>
+                <th style="padding: 10px; text-align: center;">Verilen Hasar</th>
+                <th style="padding: 10px; text-align: center; color: #d32f2f;">Giden Can</th>
+                <th style="padding: 10px; text-align: center;">Engellenen Hasar</th>
+                <th style="padding: 10px; text-align: center; color: #388e3c;">Kalan Can</th>
+            </tr>
+        `;
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        const allCards = [...gameState.player1Cards, ...gameState.player2Cards];
+        
+        allCards.forEach(card => {
+            const row = document.createElement('tr');
+            row.style.cssText = "border-bottom: 1px solid #eee;";
+            const isP1 = gameState.player1Cards.includes(card);
+            const ownerText = isP1 ? "Oyuncu 1" : (gameState.gameMode === 'pvc' ? "Bilgisayar" : "Oyuncu 2");
+            const rowColor = isP1 ? "rgba(33, 150, 243, 0.05)" : "rgba(255, 87, 34, 0.05)";
+            row.style.backgroundColor = rowColor;
+
+            const kalanCan = card.health;
+
+            row.innerHTML = `
+                <td style="padding: 10px; font-weight: bold;">${card.name} <span style="font-size: 11px; color: #888;">Lv ${card.level}</span></td>
+                <td style="padding: 10px; text-align: center;">${ownerText}</td>
+                <td style="padding: 10px; text-align: center; font-weight: bold;">${card.battleStats.attacksCount}</td>
+                <td style="padding: 10px; text-align: center; font-weight: bold; color: #1565c0;">${card.battleStats.damageDealt}</td>
+                <td style="padding: 10px; text-align: center; font-weight: bold; color: #d32f2f;">${card.battleStats.damageTaken}</td>
+                <td style="padding: 10px; text-align: center; font-weight: bold; color: #757575;">${card.battleStats.damageBlocked}</td>
+                <td style="padding: 10px; text-align: center; font-weight: bold; color: #388e3c;">${kalanCan}</td>
+            `;
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        content.appendChild(table);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = "Yeni Oyun";
+        closeBtn.style.cssText = `
+            padding: 12px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            width: 100%;
+        `;
+        closeBtn.addEventListener('click', () => {
+            modal.style.opacity = '0';
+            content.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                modal.remove();
+                gameState.askForNewGame();
+            }, 400);
+        });
+        content.appendChild(closeBtn);
+
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+
+        setTimeout(() => {
+            modal.style.opacity = '1';
+            content.style.transform = 'scale(1)';
+        }, 50);
     },
 
-    showGameResult: (winner) => {
-        setTimeout(() => {
-            alert(`Oyun bitti! ${winner} kazandı!`);
-        }, 1000);
-    },
     showAiConfigScreen: function() {
         const configScreen = document.getElementById('pvc-config-screen');
         if (!configScreen) return;
         
         configScreen.style.display = 'flex';
         
-        // Hazır desteleri dinamik render et
         const container = document.getElementById('ai-deck-select-container');
         if (container) {
             container.innerHTML = '';
@@ -370,11 +425,7 @@ const UI = {
             });
         }
     },
-    showCardInfo: (card) => {
-        // İleride tooltip alanı
-    },
     
-    // Seçilen kartları göster ve upgrade kontrolleri ekle
     displaySelectedCards: function(selectedCards, gameState) {
         const container = document.getElementById('selected-cards-container');
         if (!container) return;
@@ -389,7 +440,6 @@ const UI = {
             const canUpgrade = gameState.canUpgradeCard(card);
             const canDowngrade = gameState.canDowngradeCard(card);
             
-            // Kontroller kartın hemen yukarısına eklenecek
             const controlsDiv = document.createElement('div');
             controlsDiv.className = 'card-upgrade-controls';
             
@@ -403,7 +453,6 @@ const UI = {
                 </button>
             `;
             
-            // Birebir orijinal kart nesnesi render ediliyor (desc ve statlar dinamik günceldir)
             const cardElement = card.createCardElement();
             cardElement.classList.add('card-selected-display');
             
@@ -412,7 +461,6 @@ const UI = {
             container.appendChild(cardWrapper);
         });
         
-        // Upgrade butonlarına olay dinleyicileri
         container.querySelectorAll('.upgrade-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -421,7 +469,6 @@ const UI = {
             });
         });
         
-        // Downgrade butonlarına olay dinleyicileri
         container.querySelectorAll('.downgrade-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -431,23 +478,12 @@ const UI = {
         });
     },
     
-    // Seçilen kartlar ve puan göstergesini güncelle
     updateSelectedCardsDisplay: function(selectedCards, gameState) {
-        // Puan göstergesini güncelle
         const pointsSpan = document.getElementById('available-points');
         if (pointsSpan) {
             pointsSpan.textContent = gameState.getCurrentPlayerUsedPoints();
         }
-        
-        // Kartları yeniden render et
         UI.displaySelectedCards(selectedCards, gameState);
-    },
-    
-    clearCardSelection: function() {
-        const container = document.getElementById('selected-cards-container');
-        if (container) {
-            container.innerHTML = '';
-        }
     },
     
     showInfoMessage: function(message, duration) {
@@ -478,7 +514,6 @@ const UI = {
     }
 };
 
-// Savaş alanı elemanlarını hazırlar
 function prepareCardElements() {
     const style = document.createElement('style');
     style.textContent = `
@@ -527,17 +562,12 @@ function prepareCardElements() {
     document.head.appendChild(style);
 }
 
-// Katlanabilir Savaş Günlüğü kurulum fonksiyonu
 function initCollapsibleBattleLog() {
     const logContainer = document.getElementById('battle-log-content');
     const battleLogTitle = document.querySelector('.battle-log h3');
     
-    if (!logContainer || !battleLogTitle) {
-        console.warn("Savaş günlüğü elementleri bulunamadı, kurulum atlanıyor.");
-        return;
-    }
+    if (!logContainer || !battleLogTitle) return;
     
-    // H3 başlığını tıklanabilir bir header paneline dönüştürüyoruz
     const logHeader = document.createElement('div');
     logHeader.className = 'battle-log-header';
     logHeader.style.width = '100%';
@@ -551,7 +581,6 @@ function initCollapsibleBattleLog() {
     toggleBtn.innerHTML = 'Kapat ▲';
     logHeader.appendChild(toggleBtn);
     
-    // Orijinal H3 başlığını kaldırıp yeni header paneli ekliyoruz
     const parent = battleLogTitle.parentNode;
     parent.insertBefore(logHeader, battleLogTitle);
     battleLogTitle.remove();
@@ -573,46 +602,37 @@ function initCollapsibleBattleLog() {
     
     logHeader.addEventListener('click', toggleAction);
     
-    // Mobilde savaşı kapalı (collapsed) başlatıyoruz
     if (window.innerWidth <= 768) {
         battleLogBox.classList.add('collapsed');
         toggleBtn.innerHTML = 'Aç ▼';
     }
 }
 
-// UI ve Savaş logunun TEK BİRLEŞTİRİLMİŞ ana DOMContentLoaded dinleyicisi
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Sayfa yüklendi, oyun başlatılıyor...");
+    console.log("Sayfa yüklendi, arayüz elementleri hazırlanıyor...");
     
-    // Fare imleci hover dinleyicisi
-    document.body.addEventListener('mouseover', (event) => {
-        if (event.target.closest('.card')) {
-            const card = event.target.closest('.card');
-        }
-    });
-
-    // Orijinal arayüz hazırlıkları
     prepareCardElements();
-    
-    // Katlanabilir Savaş Günlüğü kurulumu
     initCollapsibleBattleLog();
-    // 4. PvC Seviye Modu Radyoları ve Lv seçicinin aktiflik kontrolleri
+    
     const levelModeRadios = document.querySelectorAll('input[name="ai-level-mode"]');
     const flatLevelSelector = document.getElementById('ai-flat-level-selector');
     
     levelModeRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             if (e.target.value === 'flat') {
-                flatLevelSelector.style.opacity = '1';
-                flatLevelSelector.style.pointerEvents = 'auto';
+                if (flatLevelSelector) {
+                    flatLevelSelector.style.opacity = '1';
+                    flatLevelSelector.style.pointerEvents = 'auto';
+                }
             } else {
-                flatLevelSelector.style.opacity = '0.5';
-                flatLevelSelector.style.pointerEvents = 'none';
+                if (flatLevelSelector) {
+                    flatLevelSelector.style.opacity = '0.5';
+                    flatLevelSelector.style.pointerEvents = 'none';
+                }
             }
         });
     });
 
-    // 5. Sabit seviye butonlarının tıklama yönetimi
     const aiLvlButtons = document.querySelectorAll('.ai-lvl-btn');
     aiLvlButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -621,7 +641,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 6. "Kaydet ve Kartlarımı Seçmeye Geç" Onay Butonu
     const pvcConfirmBtn = document.getElementById('pvc-confirm-btn');
     if (pvcConfirmBtn) {
         pvcConfirmBtn.addEventListener('click', () => {
@@ -641,7 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    // Oyun modu ekranı hazırlığı
+
     const gameModeScreen = document.getElementById('game-mode-selection');
     if (gameModeScreen) {
         setTimeout(() => {
@@ -649,7 +668,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     }
 
-    // Oyun başlatma döngüsü
     setTimeout(() => {
         if (window.gameState) {
             window.gameState.initGame();
