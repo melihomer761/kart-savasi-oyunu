@@ -1067,3 +1067,64 @@ body {
     color: #2e7d32 !important;
     box-shadow: 0 0 5px rgba(76, 175, 80, 0.5) !important;
 }
+/* Savaş Günlüğü ve Post-Match Modal Arka Plan Stilleri */
+.battle-log-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    background-color: #f0f0f0;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    position: relative;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.battle-log-header:hover {
+    background-color: #e5e5e0;
+    border-color: #bbb;
+}
+
+.battle-log-header h3 {
+    margin: 0 auto;
+    font-size: 13px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-align: center;
+}
+
+.battle-log-header h3::after {
+    content: " (Açmak/Kapatmak için Tıklayın)";
+    font-size: 10px;
+    color: #777;
+    font-weight: normal;
+}
+
+.toggle-log-btn {
+    position: absolute;
+    right: 12px;
+    background-color: #ddd;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 6px;
+    transition: background-color 0.2s;
+}
+
+/* Yansıtma Hasarı İçin Özel Sınıf */
+.floating-damage-text--reflect {
+    color: #e65100 !important;
+    font-style: italic;
+    text-shadow: 0 0 8px rgba(230, 81, 0, 0.6) !important;
+}
+
+/* Modal Panel Tablo Hücre Tasarımı */
+#match-stats-modal table th, #match-stats-modal table td {
+    padding: 10px;
+    border: 1px solid #eee;
+}
