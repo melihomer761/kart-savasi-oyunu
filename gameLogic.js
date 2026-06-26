@@ -609,7 +609,9 @@ const cardEffects = {
                 team.forEach(ally => {
                     if (ally !== card && ally.health > 0) {
                         if (!ally.effects) ally.effects = {};
-                        if (typeof ally.effects.dualCoverArmorBonus !== 'number') ally.effects.dualCoverArmorBonus = 0;
+                        if (typeof ally.effects.dualCoverArmorBonus !== 'number') {
+                            ally.effects.dualCoverArmorBonus = 0;
+                        }
                         ally.effects.dualCoverArmorBonus += armorBonus;
                         ally.armor += armorBonus;
                         ally.updateCardElement();
@@ -630,6 +632,7 @@ const cardEffects = {
                 const team = isPlayer1 ? gameState.player1Cards : gameState.player2Cards;
                 team.forEach(ally => {
                     if (ally !== card && ally.effects && typeof ally.effects.dualCoverArmorBonus === 'number') {
+                        // Orijinal sıfırlama mantığı korundu
                         ally.armor = ally.startingValues.armor;
                         if (ally.effects && typeof ally.effects.poisonArmorReduction === 'number') {
                             ally.armor -= ally.effects.poisonArmorReduction;
@@ -644,6 +647,28 @@ const cardEffects = {
                 }
             } catch (error) {
                 console.error("İkili Siper onTurnStart hatası:", error);
+            }
+        },
+        // Kart öldüğünde çalışan kısım da orijinal zırh sıfırlama mantığına uyarlandı
+        onDeath: (card, gameState) => {
+            try {
+                if (!gameState) return;
+                const isPlayer1 = gameState.player1Cards.includes(card);
+                const team = isPlayer1 ? gameState.player1Cards : gameState.player2Cards;
+                team.forEach(ally => {
+                    if (ally !== card && ally.effects && typeof ally.effects.dualCoverArmorBonus === 'number') {
+                        // Orijinal sıfırlama mantığı korundu
+                        ally.armor = ally.startingValues.armor;
+                        if (ally.effects && typeof ally.effects.poisonArmorReduction === 'number') {
+                            ally.armor -= ally.effects.poisonArmorReduction;
+                        }
+                        delete ally.effects.dualCoverArmorBonus;
+                        ally.updateCardElement();
+                        gameState.addToBattleLog(`${ally.name} üzerindeki İkili Siper zırh bonusu kartın ölümüyle kaldırıldı. 🛡️`);
+                    }
+                });
+            } catch (error) {
+                console.error("İkili Siper onDeath hatası:", error);
             }
         },
         onGameStart: (card, gameState) => {
