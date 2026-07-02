@@ -1,5 +1,8 @@
 # Güncelleme Notları
 
+
+
+
 PROJE DURUM BİLDİRİMİ: EVENT-DRIVEN MİMARİ
 Mevcut Durum:
 Proje, spagetti koddan (if/else blokları) kurtarılıp Event-Driven (Olay Güdümlü) ve Dependency Injection mimarisine geçiş aşamasındadır.

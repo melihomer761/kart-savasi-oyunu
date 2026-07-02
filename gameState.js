@@ -1,5 +1,5 @@
 // ==========================================================================
-// KART SAVAŞI - OYUN DURUMU MOTORU (GAMESTATE.JS YAPAY ZEKA TAM SÜRÜM)
+// KART SAVAŞI - OYUN DURUMU MOTORU (GAMESTATE.JS YAPAY ZEKA SÜRÜMÜ)
 // ==========================================================================
 
 class GameState {
@@ -15,7 +15,9 @@ class GameState {
         this.selectedCardsCount = 0;
         this.battleLog = [];
 
-        this.gameMode = ''; // 'pvp' veya 'pvc'
+        this.gameMode = ''; // 'pvp', 'pvc' veya 'online_pvp'
+        this.onlineRoomId = null; // Online oda ID'si
+        this.onlineRole = null; // 'player1' veya 'player2'
         this.currentSelectingPlayer = 1;
         this.player1SelectedCards = [];
         this.player2SelectedCards = [];
@@ -64,8 +66,57 @@ class GameState {
                 pvpButton.addEventListener('click', () => this.setGameMode('pvp'));
             }
             if (pvcButton) {
-                pvcButton.addEventListener('click', () => this.setGameMode('pvc'));
+                pvpButton.addEventListener('click', () => this.setGameMode('pvc'));
             }
+        }
+        
+        // Online mod için Network callback'leri ayarla
+        if (window.Network) {
+            Network.setCallback('onMatchFound', (data) => {
+                this.onlineRoomId = data.roomId;
+                this.onlineRole = data.role;
+                console.log(`Eşleşme bulundu: ${data.role} - ${data.opponent}`);
+                // Kart seçim ekranına geç
+                this.showCardSelection();
+                this.updatePlayerIndicator();
+            });
+            
+            Network.setCallback('onGameStarted', (data) => {
+                this.handleOnlineGameStarted(data);
+            });
+            
+            Network.setCallback('onDeckError', (data) => {
+                alert(`Deste hatası: ${data.error}`);
+            });
+
+            // Rakip hamlesi geldiğinde tetiklenen callback
+            Network.setCallback('onOpponentAction', (data) => {
+                const { attackerId, targetId } = data;
+                
+                const allCards = [...this.player1Cards, ...this.player2Cards];
+                const attackerCard = allCards.find(c => c.instanceId === attackerId);
+                const targetCard = allCards.find(c => c.instanceId === targetId);
+
+                if (attackerCard && targetCard) {
+                    this.currentAttackingCard = attackerCard;
+                    
+                    // Rakip hamlesini uyguladığımızı belirten bir bayrak açıyoruz
+                    this.executingOpponentAction = true;
+                    
+                    this.executeAttack(targetCard).then(() => {
+                        this.executingOpponentAction = false;
+                    }).catch(() => {
+                        this.executingOpponentAction = false;
+                    });
+                }
+            });
+
+            // Rakip oyundan çıktığında/bağlantısı koptuğunda çalışacak callback
+            Network.setCallback('onOpponentDisconnected', (data) => {
+                alert(`Rakibiniz (${data.opponent || 'Oyuncu'}) oyundan ayrıldı. Hükmen kazandınız!`);
+                const winnerName = this.onlineRole === 'player1' ? 'Oyuncu 1' : 'Oyuncu 2';
+                this.endGame(winnerName);
+            });
         }
     }
 
@@ -81,6 +132,9 @@ class GameState {
             if (typeof UI !== 'undefined' && UI.showAiConfigScreen) {
                 UI.showAiConfigScreen();
             }
+        } else if (mode === 'online_pvp') {
+            // Online mod için lobi ekranı zaten UI tarafından gösterildi
+            // Kart seçimi eşleşme sonrası yapılacak
         } else {
             setTimeout(() => {
                 this.showCardSelection();
@@ -395,7 +449,31 @@ class GameState {
     startGame() {
         console.log("Oyun başlatılıyor...");
         
-        if (this.gameMode === 'pvp') {
+        if (this.gameMode === 'online_pvp') {
+            // Online mod: Desteyi sunucuya gönder
+            if (this.player1SelectedCards.length !== 4) {
+                alert("Lütfen 4 kart seçin!");
+                return;
+            }
+            
+            // Desteyi sunucuya gönder
+            if (window.Network && Network.isConnected()) {
+                const deckData = this.player1SelectedCards.map(card => ({
+                    baseId: card.baseId,
+                    level: card.level
+                }));
+                
+                Network.socket.emit('submit_deck', {
+                    roomId: this.onlineRoomId,
+                    deck: deckData
+                });
+                
+                console.log("Deste sunucuya gönderildi");
+            } else {
+                alert("Sunucuya bağlı değil!");
+                return;
+            }
+        } else if (this.gameMode === 'pvp') {
             if (this.player1SelectedCards.length !== 4 || this.player2SelectedCards.length !== 4) {
                 alert("Her iki oyuncu için de 4 kart seçilmelidir!");
                 return;
@@ -433,6 +511,61 @@ class GameState {
         this.currentTurn = 1;
         this.startTurn();
     }
+    
+    handleOnlineGameStarted(data) {
+    console.log('Online oyun başlatılıyor:', data);
+    
+    const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
+    
+    this.onlineRole = role;
+    this.onlineRoomId = roomId;
+    
+    this.player2Cards = opponentDeck.map(cardData => {
+        const cardTemplate = this.availableCards.find(c => c.baseId === cardData.baseId);
+        if (cardTemplate) {
+            const card = cardTemplate.clone();
+            card.updateLevelStats(cardData.level);
+            return card;
+        }
+        return null;
+    }).filter(c => c !== null);
+    
+    this.player1Cards = this.player1SelectedCards.map(card => card.clone());
+    
+    const cardSelection = document.getElementById('card-selection');
+    if (cardSelection) cardSelection.style.display = 'none';
+    
+    const waitingScreen = document.getElementById('waiting-screen');
+    if (waitingScreen) waitingScreen.style.display = 'none';
+    
+    const gameContainer = document.querySelector('.game-container');
+    if (gameContainer) gameContainer.style.display = 'flex';
+    
+    const player2Area = document.getElementById('player2-area');
+    if (player2Area) {
+        const player2Title = player2Area.querySelector('h2');
+        if (player2Title) player2Title.textContent = opponentName;
+    }
+    
+    this.renderGameBoard();
+    
+    if (typeof applyCardEffects === 'function') {
+        applyCardEffects(this);
+    }
+    
+    this.setupGlobalClickHandler();
+    this.prepareTurnOrder();
+    
+    // Sunucudan gelen ilk tur kararını uyguluyoruz
+    this.currentPlayerTurn = (firstTurn === 'player1') ? 1 : 2;
+    
+    this.isGameStarted = true;
+    this.isSelectionPhase = false;
+    
+    this.addToBattleLog(`Savaş başladı! Rakip: ${opponentName}`);
+    this.currentTurn = 1;
+    this.startTurn();
+}
 
     setupGlobalClickHandler() {
         if (this._clickHandler) {
@@ -508,18 +641,21 @@ class GameState {
     }
 
     prepareTurnOrder() {
-        const allCards = [...this.player1Cards, ...this.player2Cards];
-        this.turnOrder = [...allCards].sort((a, b) => b.speed - a.speed);
-        
+    const allCards = [...this.player1Cards, ...this.player2Cards];
+    this.turnOrder = [...allCards].sort((a, b) => b.speed - a.speed);
+    
+    // Online mod dışındaki durumlarda sırayı rastgele belirle
+    if (this.gameMode !== 'online_pvp') {
         const random = Math.random();
         this.currentPlayerTurn = random < 0.5 ? 1 : 2;
-        
-        allCards.forEach(card => {
-            card.hasAttackedThisTurn = false;
-        });
-        
-        this.currentTurn = 0;
-        this.addToBattleLog(`Oyuncu ${this.currentPlayerTurn} tura başlıyor!`);
+    }
+    
+    allCards.forEach(card => {
+        card.hasAttackedThisTurn = false;
+    });
+    
+    this.currentTurn = 0;
+    this.addToBattleLog(`Oyuncu ${this.currentPlayerTurn} tura başlıyor!`);
     }
 
     startTurn() {
@@ -628,7 +764,6 @@ class GameState {
         }
     }
 
-    // Gelişmiş Çoklu Saldırı Simülasyonlu Karar Motoru
     executeAiTurn() {
         let attacker = this.currentAttackingCard;
         if (!attacker || attacker.health <= 0) return;
@@ -664,12 +799,18 @@ class GameState {
                     : 30;
             }
 
-            let currentTargetArmor = trg.armor;
+            // Kalkan Kopyalayıcı için zırh kopyalama bonusu
             let armorCopyBonus = 0;
             if (trg.baseId === 13) {
                 armorCopyBonus = trg.levelAbilities && trg.levelAbilities.armorCopyBonus
                     ? trg.levelAbilities.armorCopyBonus[trg.level - 1]
                     : 2;
+            }
+
+            // Hedefin mevcut zırhı (Kalkan Kopyalayıcı ise kopyalanmış zırhı da hesaba kat)
+            let currentTargetArmor = trg.armor;
+            if (trg.baseId === 13 && trg.effects && trg.effects.copiedArmor !== undefined) {
+                currentTargetArmor = trg.effects.copiedArmor;
             }
 
             for (let i = 0; i < attackCount; i++) {
@@ -681,6 +822,7 @@ class GameState {
                 // Kalkan Kopyalayıcı ise ilk vuruştan sonra zırh kopyalayacak
                 let effectiveArmor = currentTargetArmor;
                 if (trg.baseId === 13 && i > 0) {
+                    // İlk vuruştan sonra hedef, saldıranın zırhını kopyalar
                     effectiveArmor = (att.armor || 0) + armorCopyBonus;
                 }
 
@@ -846,14 +988,40 @@ class GameState {
     }
 
     async executeAttack(targetCard) {
-        if (!this.currentAttackingCard || targetCard.health <= 0) return;
+    if (!this.currentAttackingCard || targetCard.health <= 0) return;
+    
+    const hedefKartlar = this.currentPlayerTurn === 1 ? this.player2Cards : this.player1Cards;
+    const hedefUygun = hedefKartlar.some(k => k.instanceId === targetCard.instanceId);
+    if (!hedefUygun) return;
+    
+    // Online Mod Kontrolleri
+    if (this.gameMode === 'online_pvp') {
+        const isMyTurn = (this.onlineRole === 'player1' && this.currentPlayerTurn === 1) ||
+                         (this.onlineRole === 'player2' && this.currentPlayerTurn === 2);
         
-        const hedefKartlar = this.currentPlayerTurn === 1 ? this.player2Cards : this.player1Cards;
-        const hedefUygun = hedefKartlar.some(k => k.instanceId === targetCard.instanceId);
-        if (!hedefUygun) return;
-        
-        this.waitingForTarget = false;
-        this.removeHighlights();
+        // Kendi sıramız değilse ve gelen hamle dışarıdan (soket üzerinden) uygulanmıyorsa engelle
+        if (!isMyTurn && !this.executingOpponentAction) {
+            console.log("Sıra sizde değil, rakibin hamlesi bekleniyor.");
+            return;
+        }
+
+        // Eğer hamleyi bizzat biz yaptıysak ve sıramızsa bunu sunucuya gönderelim
+        if (isMyTurn && !this.executingOpponentAction) {
+            if (window.Network && Network.isConnected()) {
+                Network.socket.emit('player_action', {
+                    roomId: this.onlineRoomId,
+                    attackerId: this.currentAttackingCard.instanceId,
+                    targetId: targetCard.instanceId
+                });
+                console.log(`Online hamle iletildi: ${this.currentAttackingCard.name} -> ${targetCard.name}`);
+            }
+        }
+    }
+    
+    this.waitingForTarget = false;
+    this.removeHighlights();
+    
+    // ... (mevcut savaş animasyonları ve hasar verme mantığı aynı kalacak şekilde devam ediyor)
         
         try {
             if (typeof this.currentAttackingCard.performAttack === 'function') {

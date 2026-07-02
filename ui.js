@@ -3,6 +3,41 @@
 // ==========================================================================
 
 const UI = {
+    showScreen: (screenId) => {
+        // Tüm ekranları gizle
+        const screens = document.querySelectorAll('.game-mode-screen, .card-selection-screen, .game-container');
+        screens.forEach(screen => {
+            if (screen.id !== 'game-container') {
+                screen.style.display = 'none';
+            }
+        });
+        
+        // İstenen ekranı göster
+        const targetScreen = document.getElementById(screenId);
+        if (targetScreen) {
+            targetScreen.style.display = screenId === 'card-selection' ? 'flex' : 'flex';
+        }
+    },
+    
+    showWaitingScreen: (message, showRoomCode = false, roomCode = null) => {
+        UI.showScreen('waiting-screen');
+        
+        const waitingMessage = document.getElementById('waiting-message');
+        if (waitingMessage) {
+            waitingMessage.innerHTML = `<p>${message}</p>`;
+        }
+        
+        const roomCodeDisplay = document.getElementById('room-code-display');
+        const roomCodeValue = document.getElementById('room-code-value');
+        
+        if (showRoomCode && roomCode) {
+            if (roomCodeDisplay) roomCodeDisplay.style.display = 'block';
+            if (roomCodeValue) roomCodeValue.textContent = roomCode;
+        } else {
+            if (roomCodeDisplay) roomCodeDisplay.style.display = 'none';
+        }
+    },
+    
     updateCardSelection: (selectedCards) => {
         const selectedCount = document.getElementById('selected-count');
         if (selectedCount) selectedCount.textContent = selectedCards.length;
@@ -674,4 +709,117 @@ document.addEventListener('DOMContentLoaded', function() {
             UI.showInfoMessage('Kart Savaşı oyununa hoş geldiniz! Lütfen bir oyun modu seçin.', 3000);
         }
     }, 1000);
+    
+// Online Lobi Event Handler'ları - DÜZELTİLMİŞ SÜRÜM
+    const onlinePvpBtn = document.getElementById('online-pvp-btn');
+    if (onlinePvpBtn) {
+        onlinePvpBtn.addEventListener('click', () => {
+            if (window.gameState) {
+                window.gameState.setGameMode('online_pvp');
+                UI.showScreen('online-lobby-screen');
+                
+                // Oyuncu lobi ekranına girdiği an bağlantıyı hemen kuruyoruz
+                if (window.Network && !window.Network.isConnected()) {
+                    window.Network.connect();
+                }
+            }
+        });
+    }
+    
+    const backToModeBtn = document.getElementById('back-to-mode-btn');
+    if (backToModeBtn) {
+        backToModeBtn.addEventListener('click', () => {
+            if (window.Network) {
+                window.Network.disconnect();
+            }
+            UI.showScreen('game-mode-selection');
+        });
+    }
+    
+    const joinQueueBtn = document.getElementById('join-queue-btn');
+    if (joinQueueBtn) {
+        joinQueueBtn.addEventListener('click', () => {
+            const playerName = document.getElementById('player-name-input').value.trim();
+            if (!playerName) {
+                UI.showInfoMessage('Lütfen bir kullanıcı adı girin.', 2000);
+                return;
+            }
+            
+            // Bağlantı zaten kurulmuş olduğu için doğrudan veri gönderiyoruz
+            if (window.Network && window.Network.isConnected()) {
+                window.Network.joinQueue(playerName);
+                UI.showWaitingScreen('Rastgele eşleşmeye katıldınız. Rakip bekleniyor...', false);
+            } else {
+                UI.showInfoMessage('Sunucuyla bağlantı kuruluyor, lütfen birkaç saniye sonra tekrar deneyin...', 2500);
+            }
+        });
+    }
+    
+    const createRoomBtn = document.getElementById('create-room-btn');
+    if (createRoomBtn) {
+        createRoomBtn.addEventListener('click', () => {
+            const playerName = document.getElementById('player-name-input').value.trim();
+            if (!playerName) {
+                UI.showInfoMessage('Lütfen bir kullanıcı adı girin.', 2000);
+                return;
+            }
+            
+            if (window.Network && window.Network.isConnected()) {
+                window.Network.setCallback('onRoomCreated', (data) => {
+                    UI.showWaitingScreen('Oda oluşturuldu. Rakip bekleniyor...', true, data.roomCode);
+                });
+                window.Network.createPrivateRoom(playerName);
+            } else {
+                UI.showInfoMessage('Sunucuyla bağlantı kuruluyor, lütfen birkaç saniye sonra tekrar deneyin...', 2500);
+            }
+        });
+    }
+    
+    const joinRoomBtn = document.getElementById('join-room-btn');
+    if (joinRoomBtn) {
+        joinRoomBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // Diğer click eventlerinin tetiklenmesini engeller
+            
+            const playerName = document.getElementById('player-name-input').value.trim();
+            const roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
+            
+            if (!playerName) {
+                UI.showInfoMessage('Lütfen bir kullanıcı adı girin.', 2000);
+                return;
+            }
+            if (!roomCode || roomCode.length !== 4) {
+                UI.showInfoMessage('Lütfen geçerli bir 4 haneli oda kodu girin.', 2000);
+                return;
+            }
+            
+            if (window.Network && window.Network.isConnected()) {
+                window.Network.joinPrivateRoom(roomCode, playerName);
+            } else {
+                UI.showInfoMessage('Sunucuyla bağlantı kuruluyor, lütfen birkaç saniye sonra tekrar deneyin...', 2500);
+            }
+        });
+    }
+    
+    const cancelWaitingBtn = document.getElementById('cancel-waiting-btn');
+    if (cancelWaitingBtn) {
+        cancelWaitingBtn.addEventListener('click', () => {
+            if (window.Network) {
+                window.Network.disconnect();
+            }
+            UI.showScreen('online-lobby-screen');
+        });
+    }
+    
+    const copyRoomCodeBtn = document.getElementById('copy-room-code-btn');
+    if (copyRoomCodeBtn) {
+        copyRoomCodeBtn.addEventListener('click', () => {
+            const roomCode = document.getElementById('room-code-value').textContent;
+            navigator.clipboard.writeText(roomCode).then(() => {
+                UI.showInfoMessage('Oda kodu kopyalandı!', 1500);
+            }).catch(() => {
+                UI.showInfoMessage('Kopyalama başarısız.', 1500);
+            });
+        });
+    }
 });

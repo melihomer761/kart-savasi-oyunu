@@ -555,15 +555,9 @@ const cardEffects = {
                     ? card.levelAbilities.reflectPercentage[card.level - 1]
                     : 30;
                 
-                let actualDamageReceived = damage;
-                if (damage <= 0) {
-                    actualDamageReceived = 0;
-                } else if (typeof card.armor === 'number') {
-                    actualDamageReceived = damage - card.armor;
-                    if (actualDamageReceived < 0) actualDamageReceived = 0;
-                }
-
-                const reflectAmount = Math.floor(actualDamageReceived * (reflectPercentage / 100));
+                // Yansıtma hasarı, Dikenli Deri'nin zırhından etkilenmez - sadece gelen hasar baz alınır
+                // Negatif zırh veya zırh bypass durumunda bile yansıtma orijinal hasara göre hesaplanır
+                const reflectAmount = Math.floor(damage * (reflectPercentage / 100));
                 
                 if (reflectAmount > 0) {
                     setTimeout(() => {

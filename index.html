@@ -75,8 +75,9 @@
     <div class="game-mode-screen" id="game-mode-selection" style="display: none;">
         <h2>Oyun Modu Seçin</h2>
         <div class="game-mode-buttons">
-            <button id="pvp-mode-btn">Oyuncu VS Oyuncu</button>
+            <button id="pvp-mode-btn">Oyuncu VS Oyuncu (Yerel)</button>
             <button id="pvc-mode-btn">Oyuncu VS Bilgisayar</button>
+            <button id="online-pvp-btn">Çevrimiçi PvP (Online)</button>
         </div>
     </div>
 
@@ -126,6 +127,78 @@
         </div>
     </div>
     
+    <!-- Online Lobi Ekranı -->
+    <div class="game-mode-screen" id="online-lobby-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>Çevrimiçi Lobi</h2>
+        <div class="selection-container" style="max-width: 500px; width: 90%;">
+            
+            <!-- Kullanıcı Adı -->
+            <div class="config-section" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #333; text-align: left;">Kullanıcı Adı</h3>
+                <input type="text" id="player-name-input" placeholder="Oyuncu adınızı girin" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+            </div>
+            
+            <!-- Rastgele Eşleşme -->
+            <div class="config-section" style="margin-bottom: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #333; text-align: left;">Rastgele Eşleşme</h3>
+                <button id="join-queue-btn" style="width: 100%; padding: 12px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold;">
+                    Rastgele Eşleşmeye Katıl
+                </button>
+            </div>
+            
+            <!-- Özel Oda -->
+            <div class="config-section" style="margin-bottom: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #333; text-align: left;">Özel Oda</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button id="create-room-btn" style="flex: 1; padding: 12px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold;">
+                        Oda Oluştur
+                    </button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="room-code-input" placeholder="Oda kodu (örn: AB12)" maxlength="4" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; text-transform: uppercase;">
+                    <button id="join-room-btn" style="padding: 10px 20px; background-color: #FF9800; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold;">
+                        Katıl
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Geri Dön -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="back-to-mode-btn" style="padding: 10px 20px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    Geri Dön
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bekleme Ekranı -->
+    <div class="game-mode-screen" id="waiting-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2 id="waiting-title">Rakip Bekleniyor...</h2>
+        <div class="selection-container" style="max-width: 400px; width: 90%; text-align: center;">
+            
+            <!-- Oda Kodu Gösterimi (sadece özel oda için) -->
+            <div id="room-code-display" style="display: none; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #333;">Oda Kodunuz:</h3>
+                <div id="room-code-value" style="font-size: 32px; font-weight: bold; color: #2196F3; letter-spacing: 5px; margin-bottom: 10px;"></div>
+                <button id="copy-room-code-btn" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                    Kopyala
+                </button>
+            </div>
+            
+            <!-- Bekleme Mesajı -->
+            <div id="waiting-message" style="margin-bottom: 20px; font-size: 16px; color: #666;">
+                <p>Sıraya girdiniz. Rakip bekleniyor...</p>
+            </div>
+            
+            <!-- İptal Butonu -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="cancel-waiting-btn" style="padding: 10px 20px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    İptal
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Kart Seçim Ekranı -->
     <div class="card-selection-screen" id="card-selection" style="display: none;">
         <h2>Kartlarınızı Seçin</h2>
@@ -154,9 +227,13 @@
         <div class="available-cards" id="available-cards"></div>
     </div>
     
+    <!-- Socket.io Client CDN (Online multiplayer için) -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
     <!-- Scriptlerimizi hiyerarşik sırayla alt kısımda tek seferlik çağırıyoruz -->
     <script src="ui.js?v=2"></script>
     <script src="cards.js"></script>
+    <script src="network.js"></script>
     <script src="gameState.js"></script>
     <script src="gameLogic.js"></script>
     

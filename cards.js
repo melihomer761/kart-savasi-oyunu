@@ -84,7 +84,7 @@ const cardsData = [
         description: "Peş peşe 3 kez hasar verir.",
         levelStats: {
             health: [70, 84, 84, 84, 84],
-            attack: [13, 13, 10, 14, 8],
+            attack: [13, 13, 10, 14, 7],
             speed: [10, 10, 10, 10, 10],
             armor: [0, 0, 0, 2, 2]
         },
@@ -96,7 +96,7 @@ const cardsData = [
             "Peş peşe 3 kez hasar verir. (+14 Can)",
             "Peş peşe 4 kez hasar verir. (+14 Can, -3 Hasar)",
             "Peş peşe 4 kez hasar verir. (+14 Can, +1 Hasar, +2 Zırh)",
-            "Peş peşe 5 kez hasar verir. (+14 Can, -5 Hasar, +2 Zırh)"
+            "Peş peşe 5 kez hasar verir. (+14 Can, -6 Hasar, +2 Zırh)"
         ]
     },
     {

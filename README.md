@@ -46,6 +46,7 @@ Her kartın kendine özgü özellikleri vardır:
 
 ### Eklenecek Özellikler
 - ❌ Farklı haritalar ve harita efektleri
+- ❌ Kart seviyelendirme sistemi
 - ❌ Ses efektleri ve müzik
 
 ## Teknolojiler

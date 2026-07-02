@@ -1,0 +1,22 @@
+{
+  "name": "kart-savasi-online",
+  "version": "1.0.0",
+  "description": "Kart Savaşı Online Multiplayer Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "card-game",
+    "multiplayer",
+    "socket.io"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5"
+  }
+}
