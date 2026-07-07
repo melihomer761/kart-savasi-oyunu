@@ -644,7 +644,6 @@ function initCollapsibleBattleLog() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Sayfa yüklendi, arayüz elementleri hazırlanıyor...");
     
     prepareCardElements();
     initCollapsibleBattleLog();
@@ -730,65 +729,155 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    const authProfile = document.getElementById('auth-profile');
+    const authForm = document.getElementById('auth-form');
+    const profileUsername = document.getElementById('profile-username');
+    const profileRating = document.getElementById('profile-rating');
+    const profileGames = document.getElementById('profile-games');
+    const authErrorMessage = document.getElementById('auth-error-message');
+    const authUsernameInput = document.getElementById('auth-username-input');
+    const authPasswordInput = document.getElementById('auth-password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const registerBtn = document.getElementById('register-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    function showAuthError(message) {
+        if (!authErrorMessage) return;
+        authErrorMessage.textContent = message;
+        authErrorMessage.style.display = 'block';
+    }
+
+    function clearAuthError() {
+        if (!authErrorMessage) return;
+        authErrorMessage.textContent = '';
+        authErrorMessage.style.display = 'none';
+    }
+
+    function updateAuthUI() {
+        const authenticated = window.Network && window.Network.isAuthenticated();
+        if (authenticated && window.Network.profile) {
+            if (authProfile) authProfile.style.display = 'block';
+            if (authForm) authForm.style.display = 'none';
+            if (profileUsername) profileUsername.textContent = window.Network.profile.username || '';
+            if (profileRating) profileRating.textContent = window.Network.profile.rating || '0';
+            if (profileGames) profileGames.textContent = window.Network.profile.gamesPlayed || '0';
+        } else {
+            if (authProfile) authProfile.style.display = 'none';
+            if (authForm) authForm.style.display = 'block';
+        }
+    }
+
+    if (window.Network) {
+        window.Network.loadAuthFromStorage();
+        updateAuthUI();
+        if (window.Network.isAuthenticated()) {
+            window.Network.connect('http://localhost:3000');
+        }
+    }
+
+    if (loginBtn) {
+        loginBtn.addEventListener('click', async () => {
+            clearAuthError();
+            const username = authUsernameInput?.value.trim();
+            const password = authPasswordInput?.value;
+            if (!username || !password) {
+                showAuthError('Kullanıcı adı ve şifre girin.');
+                return;
+            }
+            try {
+                await window.Network.login(username, password);
+                updateAuthUI();
+                window.Network.connect('http://localhost:3000');
+                UI.showInfoMessage('Giriş başarılı. Çevrimiçi modu kullanabilirsiniz.', 2500);
+            } catch (error) {
+                showAuthError(error.message);
+            }
+        });
+    }
+
+    if (registerBtn) {
+        registerBtn.addEventListener('click', async () => {
+            clearAuthError();
+            const username = authUsernameInput?.value.trim();
+            const password = authPasswordInput?.value;
+            if (!username || !password) {
+                showAuthError('Kullanıcı adı ve şifre girin.');
+                return;
+            }
+            try {
+                await window.Network.register(username, password);
+                updateAuthUI();
+                window.Network.connect('http://localhost:3000');
+                UI.showInfoMessage('Kayıt başarılı. Çevrimiçi modu kullanabilirsiniz.', 2500);
+            } catch (error) {
+                showAuthError(error.message);
+            }
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            if (window.Network) {
+                window.Network.clearAuth();
+            }
+            updateAuthUI();
+            UI.showInfoMessage('Çıkış yapıldı.', 2000);
+        });
+    }
+
     const joinQueueBtn = document.getElementById('join-queue-btn');
     if (joinQueueBtn) {
         joinQueueBtn.addEventListener('click', () => {
-            const playerName = document.getElementById('player-name-input').value.trim();
-            if (!playerName) {
-                UI.showInfoMessage('Lütfen bir kullanıcı adı girin.', 2000);
+            if (!window.Network || !window.Network.isAuthenticated()) {
+                UI.showInfoMessage('Önce giriş yapmanız gerekiyor.', 2500);
                 return;
             }
-            
-            // Bağlantı zaten kurulmuş olduğu için doğrudan veri gönderiyoruz
-            if (window.Network && window.Network.isConnected()) {
-                window.Network.joinQueue(playerName);
-                UI.showWaitingScreen('Rastgele eşleşmeye katıldınız. Rakip bekleniyor...', false);
-            } else {
-                UI.showInfoMessage('Sunucuyla bağlantı kuruluyor, lütfen birkaç saniye sonra tekrar deneyin...', 2500);
+            if (!window.Network.isConnected()) {
+                UI.showInfoMessage('Sunucuya bağlanılıyor, lütfen bekleyin...', 2500);
+                window.Network.connect('http://localhost:3000');
+                return;
             }
+            window.Network.joinQueue();
+            UI.showWaitingScreen('Rastgele eşleşmeye katıldınız. Rakip bekleniyor...', false);
         });
     }
-    
+
     const createRoomBtn = document.getElementById('create-room-btn');
     if (createRoomBtn) {
         createRoomBtn.addEventListener('click', () => {
-            const playerName = document.getElementById('player-name-input').value.trim();
-            if (!playerName) {
-                UI.showInfoMessage('Lütfen bir kullanıcı adı girin.', 2000);
+            if (!window.Network || !window.Network.isAuthenticated()) {
+                UI.showInfoMessage('Önce giriş yapmanız gerekiyor.', 2500);
                 return;
             }
-            
-            if (window.Network && window.Network.isConnected()) {
-                window.Network.createPrivateRoom(playerName);
-            } else {
-                UI.showInfoMessage('Sunucuyla bağlantı kuruluyor, lütfen birkaç saniye sonra tekrar deneyin...', 2500);
+            if (!window.Network.isConnected()) {
+                UI.showInfoMessage('Sunucuya bağlanılıyor, lütfen bekleyin...', 2500);
+                window.Network.connect('http://localhost:3000');
+                return;
             }
+            window.Network.createPrivateRoom();
         });
     }
-    
+
     const joinRoomBtn = document.getElementById('join-room-btn');
     if (joinRoomBtn) {
         joinRoomBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            e.stopPropagation(); // Diğer click eventlerinin tetiklenmesini engeller
-            
-            const playerName = document.getElementById('player-name-input').value.trim();
+            e.stopPropagation();
             const roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
-            
-            if (!playerName) {
-                UI.showInfoMessage('Lütfen bir kullanıcı adı girin.', 2000);
+            if (!window.Network || !window.Network.isAuthenticated()) {
+                UI.showInfoMessage('Önce giriş yapmanız gerekiyor.', 2500);
                 return;
             }
             if (!roomCode || roomCode.length !== 4) {
                 UI.showInfoMessage('Lütfen geçerli bir 4 haneli oda kodu girin.', 2000);
                 return;
             }
-            
-            if (window.Network && window.Network.isConnected()) {
-                window.Network.joinPrivateRoom(roomCode, playerName);
-            } else {
-                UI.showInfoMessage('Sunucuyla bağlantı kuruluyor, lütfen birkaç saniye sonra tekrar deneyin...', 2500);
+            if (!window.Network.isConnected()) {
+                UI.showInfoMessage('Sunucuya bağlanılıyor, lütfen bekleyin...', 2500);
+                window.Network.connect('http://localhost:3000');
+                return;
             }
+            window.Network.joinPrivateRoom(roomCode);
         });
     }
     

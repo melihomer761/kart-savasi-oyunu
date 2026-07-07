@@ -132,10 +132,23 @@
         <h2>Çevrimiçi Lobi</h2>
         <div class="selection-container" style="max-width: 500px; width: 90%;">
             
-            <!-- Kullanıcı Adı -->
+            <!-- Kullanıcı Girişi -->
             <div class="config-section" style="margin-bottom: 20px;">
-                <h3 style="margin-bottom: 10px; font-size: 16px; color: #333; text-align: left;">Kullanıcı Adı</h3>
-                <input type="text" id="player-name-input" placeholder="Oyuncu adınızı girin" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #333; text-align: left;">Hesabınızla Giriş Yapın</h3>
+                <div id="auth-profile" style="display: none; padding: 12px; background: #f1f8e9; border-radius: 8px; margin-bottom: 12px;">
+                    <p style="margin: 0 0 6px; font-size: 14px;"><strong>Giriş yapıldı:</strong> <span id="profile-username"></span></p>
+                    <p style="margin: 0 0 10px; font-size: 13px; color: #555;">Rating: <span id="profile-rating"></span> | Oyun: <span id="profile-games"></span></p>
+                    <button id="logout-btn" style="padding: 10px 16px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Çıkış Yap</button>
+                </div>
+                <div id="auth-form" style="display: none;">
+                    <input type="text" id="auth-username-input" placeholder="Kullanıcı adınızı girin" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; margin-bottom: 10px;">
+                    <input type="password" id="auth-password-input" placeholder="Şifrenizi girin" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; margin-bottom: 10px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button id="login-btn" style="flex: 1; padding: 12px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Giriş Yap</button>
+                        <button id="register-btn" style="flex: 1; padding: 12px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Kayıt Ol</button>
+                    </div>
+                    <div id="auth-error-message" style="display:none; color: #d32f2f; margin-top: 10px; font-size: 13px;"></div>
+                </div>
             </div>
             
             <!-- Rastgele Eşleşme -->

@@ -1,6 +1,6 @@
 // Bellek içi durum (In-Memory State)
 const rooms = {}; // Aktif odalar: { roomId: { players: [], status: 'waiting'|'ready'|'playing'|'finished' } }
-const queue = []; // Rastgele eşleşme kuyruğu: [{ socketId, playerName }]
+const queue = []; // Rastgele eşleşme kuyruğu: [{ socketId, playerName, userId }]
 const playerRoomMap = {}; // Socket ID -> Room ID mapping
 
 // Yardımcı fonksiyonlar
@@ -21,9 +21,8 @@ function generateRoomCode() {
 }
 
 // Oyuncuyu kuyruğa ekle
-function addToQueue(socketId, playerName) {
-    queue.push({ socketId, playerName });
-    console.log(`${playerName} kuyruğa eklendi. Kuyruk boyutu: ${queue.length}`);
+function addToQueue(socketId, playerName, userId = null) {
+    queue.push({ socketId, playerName, userId });
 }
 
 // Oyuncuyu kuyruktan çıkar
@@ -31,7 +30,6 @@ function removeFromQueue(socketId) {
     const index = queue.findIndex(p => p.socketId === socketId);
     if (index !== -1) {
         const player = queue.splice(index, 1)[0];
-        console.log(`${player.playerName} kuyruktan çıkarıldı. Kuyruk boyutu: ${queue.length}`);
         return player;
     }
     return null;
@@ -46,20 +44,18 @@ function createRoom(roomId, roomCode = null) {
         status: 'waiting',
         createdAt: Date.now()
     };
-    console.log(`Oda oluşturuldu: ${roomId}${roomCode ? ` (Kod: ${roomCode})` : ''}`);
     return rooms[roomId];
 }
 
 // Odaya oyuncu ekle
-function addPlayerToRoom(roomId, socketId, playerName, role) {
+function addPlayerToRoom(roomId, socketId, playerName, role, userId = null) {
     if (!rooms[roomId]) {
         console.error(`Oda bulunamadı: ${roomId}`);
         return false;
     }
     
-    rooms[roomId].players.push({ socketId, playerName, role, isReady: false, deck: null });
+    rooms[roomId].players.push({ socketId, playerName, role, userId, isReady: false, deck: null });
     playerRoomMap[socketId] = roomId;
-    console.log(`${playerName} (${role}) odaya eklendi: ${roomId}`);
     return true;
 }
 
@@ -71,7 +67,6 @@ function cleanupRoom(roomId) {
             delete playerRoomMap[player.socketId];
         });
         delete rooms[roomId];
-        console.log(`Oda temizlendi: ${roomId}`);
     }
 }
 
@@ -119,8 +114,8 @@ function checkMatchmaking(io) {
         createRoom(roomId);
         
         // Oyuncuları odaya ekle
-        addPlayerToRoom(roomId, player1.socketId, player1.playerName, 'player1');
-        addPlayerToRoom(roomId, player2.socketId, player2.playerName, 'player2');
+        addPlayerToRoom(roomId, player1.socketId, player1.playerName, 'player1', player1.userId);
+        addPlayerToRoom(roomId, player2.socketId, player2.playerName, 'player2', player2.userId);
         
         // Odaya sok
         const socket1 = io.sockets.sockets.get(player1.socketId);
@@ -132,7 +127,6 @@ if (socket2) socket2.join(roomId);
         // Oda durumunu güncelle
         rooms[roomId].status = 'ready';
         
-        console.log(`Eşleşme tamamlandı: ${player1.playerName} vs ${player2.playerName} (${roomId})`);
         
         // Her iki oyuncuya da eşleşme bulundu mesajı gönder
         io.to(player1.socketId).emit('match_found', {

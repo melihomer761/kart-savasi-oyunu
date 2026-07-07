@@ -2,6 +2,9 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const db = require('./db');
 const {
     addToQueue,
     removeFromQueue,
@@ -14,6 +17,9 @@ const {
     rooms
 } = require('./rooms');
 const { validateDeck } = require('./validators');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'kart-savası-gizli-anahtar';
+const JWT_EXPIRY = '7d';
 
 const app = express();
 const server = http.createServer(app);
@@ -34,6 +40,74 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Kart Savaşı Online Server Çalışıyor' });
 });
 
+function createToken(payload) {
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+}
+
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Token bulunamadı' });
+    }
+
+    try {
+        const payload = jwt.verify(token, JWT_SECRET);
+        req.user = payload;
+        next();
+    } catch (error) {
+        return res.status(401).json({ error: 'Geçersiz token' });
+    }
+}
+
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Kullanıcı adı ve şifre gerekli' });
+    }
+
+    const existing = db.findPlayerByUsername(username);
+    if (existing) {
+        return res.status(409).json({ error: 'Bu kullanıcı adı zaten kullanılıyor' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = db.createPlayer(username, passwordHash);
+    const token = createToken({ id: user.id, username: user.username });
+
+    return res.json({ token, profile: db.getPlayerProfile(user.id) });
+});
+
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Kullanıcı adı ve şifre gerekli' });
+    }
+
+    const user = db.findPlayerByUsername(username);
+    if (!user) {
+        return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordMatches) {
+        return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
+    }
+
+    const token = createToken({ id: user.id, username: user.username });
+    return res.json({ token, profile: db.getPlayerProfile(user.id) });
+});
+
+app.get('/api/profile', authenticateToken, (req, res) => {
+    const profile = db.getPlayerProfile(req.user.id);
+    if (!profile) {
+        return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+    }
+
+    res.json({ profile });
+});
+
 function isPlayer1Card(id) {
     return id >= 101 && id <= 104;
 }
@@ -49,22 +123,36 @@ function validatePlayerAction(player, attackerId, targetId) {
     return isPlayer2Card(attackerId) && isPlayer1Card(targetId);
 }
 
+io.use((socket, next) => {
+    const token = socket.handshake.auth && socket.handshake.auth.token;
+    if (!token) {
+        return next(new Error('Authentication error'));
+    }
+
+    try {
+        const payload = jwt.verify(token, JWT_SECRET);
+        socket.user = payload;
+        return next();
+    } catch (error) {
+        return next(new Error('Authentication error'));
+    }
+});
+
 io.on('connection', (socket) => {
-    console.log(`Oyuncu bağlandı: ${socket.id}`);
 
     socket.on('join_queue', (data) => {
-        const playerName = data.playerName || `Oyuncu_${socket.id.substr(0, 4)}`;
-        addToQueue(socket.id, playerName);
+        const playerName = socket.user.username || `Oyuncu_${socket.id.substr(0, 4)}`;
+        addToQueue(socket.id, playerName, socket.user.id);
         checkMatchmaking(io);
     });
 
     socket.on('create_private_room', (data) => {
-        const playerName = data.playerName || `Oyuncu_${socket.id.substr(0, 4)}`;
+        const playerName = socket.user.username || `Oyuncu_${socket.id.substr(0, 4)}`;
         const roomCode = generateRoomCode();
         const roomId = `room_${roomCode}`;
 
         createRoom(roomId, roomCode);
-        addPlayerToRoom(roomId, socket.id, playerName, 'player1');
+        addPlayerToRoom(roomId, socket.id, playerName, 'player1', socket.user.id);
         socket.join(roomId);
 
         socket.emit('room_created', {
@@ -73,28 +161,25 @@ io.on('connection', (socket) => {
             role: 'player1'
         });
 
-        console.log(`${playerName} özel oda oluşturdu: ${roomCode}`);
     });
 
     socket.on('join_private_room', (data) => {
         const roomCode = data.roomCode;
-        const playerName = data.playerName || `Oyuncu_${socket.id.substr(0, 4)}`;
+        const playerName = socket.user.username || `Oyuncu_${socket.id.substr(0, 4)}`;
 
         const room = findRoomByCode(roomCode);
 
         if (!room) {
             socket.emit('room_not_found', { roomCode: roomCode });
-            console.log(`Oda bulunamadı: ${roomCode}`);
             return;
         }
 
         if (room.status !== 'waiting') {
             socket.emit('room_not_available', { roomCode: roomCode });
-            console.log(`Oda dolu veya meşgul: ${roomCode}`);
             return;
         }
 
-        addPlayerToRoom(room.roomId, socket.id, playerName, 'player2');
+        addPlayerToRoom(room.roomId, socket.id, playerName, 'player2', socket.user.id);
         socket.join(room.roomId);
         room.status = 'ready';
 
@@ -113,11 +198,9 @@ io.on('connection', (socket) => {
             opponent: player1 ? player1.playerName : 'Bilinmeyen'
         });
 
-        console.log(`${playerName} odaya katıldı: ${roomCode}`);
     });
 
     socket.on('disconnect', (reason) => {
-        console.log(`Oyuncu koptu: ${socket.id} (neden: ${reason})`);
 
         removeFromQueue(socket.id);
 
@@ -139,7 +222,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('player_ready', (data) => {
-        console.log('player_ready event alındı:', data);
         const { roomId, deck } = data;
 
         const room = rooms[roomId];
@@ -151,20 +233,17 @@ io.on('connection', (socket) => {
         const player = room.players.find(p => p.socketId === socket.id);
         if (!player) {
             socket.emit('deck_error', { error: 'Oyuncu odada bulunamadı' });
-            console.log(`player_ready reddedildi: socket ${socket.id} odada yok (${roomId})`);
             return;
         }
 
         const validation = validateDeck(deck);
         if (!validation.valid) {
             socket.emit('deck_error', { error: validation.error });
-            console.log(`Deste doğrulama hatası (${player.playerName}): ${validation.error}`);
             return;
         }
 
         player.deck = deck;
         player.isReady = true;
-        console.log(`${player.playerName} hazır (${validation.totalPoints} puan)`);
 
         console.log('Oda durumu:', room.players.map(p => ({
             name: p.playerName,
@@ -182,10 +261,8 @@ io.on('connection', (socket) => {
         });
 
         const allPlayersReady = room.players.length === 2 && room.players.every(p => p.isReady);
-        console.log(`Tüm oyuncular hazır mı? ${allPlayersReady}`);
 
         if (allPlayersReady) {
-            console.log('Oyun başlatılıyor...');
             startOnlineGame(room, io);
         }
     });
@@ -199,7 +276,6 @@ io.on('connection', (socket) => {
         const player = room.players.find(p => p.socketId === socket.id);
         if (!player) return;
 
-        console.log(`${player.playerName} kart seçim süresi doldu, atılıyor`);
 
         room.players.forEach(p => {
             if (p.socketId !== socket.id) {
@@ -229,11 +305,9 @@ io.on('connection', (socket) => {
 
         if (!validatePlayerAction(player, attackerId, targetId)) {
             socket.emit('action_error', { error: 'Geçersiz hamle' });
-            console.log(`Geçersiz hamle: ${player.playerName} -> ${attackerId} -> ${targetId}`);
             return;
         }
 
-        console.log(`Hamle relay: ${player.playerName} (${attackerId} -> ${targetId})`);
 
         room.players.forEach(p => {
             if (p.socketId !== socket.id) {
@@ -252,23 +326,32 @@ io.on('connection', (socket) => {
         if (!player) return;
 
         room.status = 'finished';
-        console.log(`Oyun bitti: ${room.roomId}, kazanan: ${winnerRole}`);
 
         room.players.forEach(p => {
             if (p.socketId !== socket.id) {
                 io.to(p.socketId).emit('game_over', { winnerRole });
             }
         });
+
+        if (room.players && room.players.length === 2) {
+            const winner = room.players.find(p => p.role === winnerRole);
+            const loser = room.players.find(p => p.role !== winnerRole);
+
+            if (winner && winner.userId) {
+                db.updatePlayerStats(winner.userId, 'win');
+            }
+            if (loser && loser.userId) {
+                db.updatePlayerStats(loser.userId, 'loss');
+            }
+        }
     });
 
     socket.on('test-message', (data) => {
-        console.log('Test mesajı alındı:', data);
         socket.emit('test-response', { message: 'Sunucu mesajı aldı' });
     });
 });
 
 function startOnlineGame(room, io) {
-    console.log(`Oyun başlatılıyor: ${room.roomId}`);
 
     room.status = 'playing';
 
@@ -295,12 +378,10 @@ function startOnlineGame(room, io) {
             firstTurn: firstTurn
         });
 
-        console.log(`Oyun başlatıldı: ${player1.playerName} vs ${player2.playerName}. İlk hamle: ${firstTurn}`);
     }
 }
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Sunucu ${PORT} portunda çalışıyor`);
-    console.log(`Oyun: http://localhost:${PORT}`);
 });

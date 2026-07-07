@@ -7,6 +7,10 @@ class NetworkManager {
         this.connected = false;
         this.serverUrl = 'http://localhost:3000';
         this.listenersRegistered = false;
+        this.authToken = null;
+        this.profile = null;
+
+        this.loadAuthFromStorage();
 
         this.callbacks = {
             onMatchFound: null,
@@ -26,7 +30,6 @@ class NetworkManager {
             onGameOver: null
         };
 
-        console.log('NetworkManager başlatıldı');
     }
 
     connect(serverUrl = null) {
@@ -40,7 +43,6 @@ class NetworkManager {
         }
 
         if (this.isConnected()) {
-            console.log('Zaten sunucuya bağlı');
             return true;
         }
 
@@ -52,8 +54,16 @@ class NetworkManager {
             this.listenersRegistered = false;
         }
 
+        if (!this.authToken) {
+            console.error('Oturum açılmadan çevrimiçi modda bağlanılamaz.');
+            return false;
+        }
+
         try {
             this.socket = io(this.serverUrl, {
+                auth: {
+                    token: this.authToken
+                },
                 reconnection: true,
                 reconnectionAttempts: 5,
                 reconnectionDelay: 1000,
@@ -74,7 +84,6 @@ class NetworkManager {
 
         this.socket.on('connect', () => {
             this.connected = true;
-            console.log(`Sunucuya bağlandı: ${this.serverUrl} (id: ${this.socket.id})`);
             if (this.callbacks.onConnect) {
                 this.callbacks.onConnect();
             }
@@ -82,98 +91,84 @@ class NetworkManager {
 
         this.socket.on('disconnect', (reason) => {
             this.connected = false;
-            console.log('Sunucu bağlantısı koptu:', reason);
             if (this.callbacks.onDisconnect) {
                 this.callbacks.onDisconnect(reason);
             }
         });
 
         this.socket.on('match_found', (data) => {
-            console.log('Eşleşme bulundu:', data);
             if (this.callbacks.onMatchFound) {
                 this.callbacks.onMatchFound(data);
             }
         });
 
         this.socket.on('room_created', (data) => {
-            console.log('Oda oluşturuldu:', data);
             if (this.callbacks.onRoomCreated) {
                 this.callbacks.onRoomCreated(data);
             }
         });
 
         this.socket.on('room_joined', (data) => {
-            console.log('Odaya katıldı:', data);
             if (this.callbacks.onRoomJoined) {
                 this.callbacks.onRoomJoined(data);
             }
         });
 
         this.socket.on('opponent_joined', (data) => {
-            console.log('Rakip katıldı:', data);
             if (this.callbacks.onOpponentJoined) {
                 this.callbacks.onOpponentJoined(data);
             }
         });
 
         this.socket.on('opponent_disconnected', (data) => {
-            console.log('Rakip ayrıldı:', data);
             if (this.callbacks.onOpponentDisconnected) {
                 this.callbacks.onOpponentDisconnected(data);
             }
         });
 
         this.socket.on('room_not_found', (data) => {
-            console.log('Oda bulunamadı:', data);
             if (this.callbacks.onRoomNotFound) {
                 this.callbacks.onRoomNotFound(data);
             }
         });
 
         this.socket.on('room_not_available', (data) => {
-            console.log('Oda mevcut değil:', data);
             if (this.callbacks.onRoomNotAvailable) {
                 this.callbacks.onRoomNotAvailable(data);
             }
         });
 
         this.socket.on('game_started', (data) => {
-            console.log('Oyun başladı:', data);
             if (this.callbacks.onGameStarted) {
                 this.callbacks.onGameStarted(data);
             }
         });
 
         this.socket.on('deck_error', (data) => {
-            console.log('Deste hatası:', data);
             if (this.callbacks.onDeckError) {
                 this.callbacks.onDeckError(data);
             }
         });
 
         this.socket.on('opponent_ready', (data) => {
-            console.log('Rakip hazır:', data);
             if (this.callbacks.onOpponentReady) {
                 this.callbacks.onOpponentReady(data);
             }
         });
 
         this.socket.on('opponent_timeout', (data) => {
-            console.log('Rakip süresi doldu:', data);
             if (this.callbacks.onOpponentTimeout) {
                 this.callbacks.onOpponentTimeout(data);
             }
         });
 
         this.socket.on('opponent_action', (data) => {
-            console.log('Rakip hamlesi:', data);
             if (this.callbacks.onOpponentAction) {
                 this.callbacks.onOpponentAction(data);
             }
         });
 
         this.socket.on('game_over', (data) => {
-            console.log('Oyun bitti:', data);
             if (this.callbacks.onGameOver) {
                 this.callbacks.onGameOver(data);
             }
@@ -182,14 +177,129 @@ class NetworkManager {
         this.listenersRegistered = true;
     }
 
+    setAuthToken(token) {
+        this.authToken = token;
+        try {
+            window.localStorage.setItem('kartSavasAuthToken', token);
+        } catch (error) {
+            console.warn('Auth token yerel depolamaya kaydedilemedi:', error);
+        }
+    }
+
+    setProfile(profile) {
+        this.profile = profile;
+        try {
+            window.localStorage.setItem('kartSavasProfile', JSON.stringify(profile));
+        } catch (error) {
+            console.warn('Profil yerel depolamaya kaydedilemedi:', error);
+        }
+    }
+
+    loadAuthFromStorage() {
+        try {
+            const token = window.localStorage.getItem('kartSavasAuthToken');
+            const profileJson = window.localStorage.getItem('kartSavasProfile');
+            if (token) this.authToken = token;
+            if (profileJson) this.profile = JSON.parse(profileJson);
+        } catch (error) {
+            console.warn('Yerel depolama yüklenemedi:', error);
+        }
+    }
+
+    clearAuth() {
+        this.authToken = null;
+        this.profile = null;
+        this.disconnect();
+        try {
+            window.localStorage.removeItem('kartSavasAuthToken');
+            window.localStorage.removeItem('kartSavasProfile');
+        } catch (error) {
+            console.warn('Yerel depolama temizlenemedi:', error);
+        }
+    }
+
+    async login(username, password) {
+        try {
+            const response = await fetch(`${this.serverUrl}/api/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Giriş başarısız');
+            }
+
+            this.setAuthToken(data.token);
+            this.setProfile(data.profile);
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async register(username, password) {
+        try {
+            const response = await fetch(`${this.serverUrl}/api/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Kayıt başarısız');
+            }
+
+            this.setAuthToken(data.token);
+            this.setProfile(data.profile);
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async fetchProfile() {
+        if (!this.authToken) return null;
+        try {
+            const response = await fetch(`${this.serverUrl}/api/profile`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.authToken}`
+                }
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Profil alınamadı');
+            }
+            this.setProfile(data.profile);
+            return data.profile;
+        } catch (error) {
+            console.warn('Profil alınırken hata:', error);
+            return null;
+        }
+    }
+
+    isAuthenticated() {
+        return !!this.authToken;
+    }
+
+    getProfile() {
+        return this.profile;
+    }
+
     joinQueue(playerName) {
         if (!this.isConnected()) {
             console.error('Sunucuya bağlı değil');
             return false;
         }
 
-        this.socket.emit('join_queue', { playerName });
-        console.log(`${playerName} eşleşme kuyruğuna katıldı`);
+        this.socket.emit('join_queue', { playerName: playerName || this.profile?.username });
         return true;
     }
 
@@ -199,8 +309,7 @@ class NetworkManager {
             return false;
         }
 
-        this.socket.emit('create_private_room', { playerName });
-        console.log(`${playerName} özel oda oluşturuyor`);
+        this.socket.emit('create_private_room', { playerName: playerName || this.profile?.username });
         return true;
     }
 
@@ -210,8 +319,7 @@ class NetworkManager {
             return false;
         }
 
-        this.socket.emit('join_private_room', { roomCode, playerName });
-        console.log(`${playerName} odaya katılıyor: ${roomCode}`);
+        this.socket.emit('join_private_room', { roomCode, playerName: playerName || this.profile?.username });
         return true;
     }
 
@@ -238,7 +346,6 @@ class NetworkManager {
             this.socket = null;
             this.connected = false;
             this.listenersRegistered = false;
-            console.log('Bağlantı kesildi');
         }
     }
 
@@ -248,7 +355,6 @@ class NetworkManager {
             return false;
         }
 
-        console.log('player_ready gönderiliyor:', { roomId, socketId: this.socket.id, deck });
         this.socket.emit('player_ready', { roomId, deck });
         return true;
     }
@@ -260,7 +366,6 @@ class NetworkManager {
         }
 
         this.socket.emit('selection_timeout', { roomId });
-        console.log('Süre doldu bildirimi gönderildi');
         return true;
     }
 
