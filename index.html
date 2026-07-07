@@ -202,6 +202,17 @@
     <!-- Kart Seçim Ekranı -->
     <div class="card-selection-screen" id="card-selection" style="display: none;">
         <h2>Kartlarınızı Seçin</h2>
+        
+        <!-- Online Mod Süre Sayacı -->
+        <div id="online-timer-container" style="display: none; text-align: center; margin-bottom: 15px;">
+            <div style="font-size: 18px; font-weight: bold; color: #ff6b6b;">
+                Kalan Süre: <span id="selection-timer">60</span> saniye
+            </div>
+            <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                Kartlarınızı seçin ve "Hazır" butonuna basın
+            </div>
+        </div>
+        
         <div class="player-indicator" id="player-turn-indicator">Oyuncu 1</div>
         
         <div class="selection-container">
@@ -220,6 +231,7 @@
             <div class="button-container">
                 <button id="start-game-btn" disabled>Oyunu Başlat</button>
                 <button id="next-player-btn" style="display: none;">Sıradaki Oyuncu</button>
+                <button id="ready-btn" style="display: none;">Hazır</button>
             </div>
         </div>
         
@@ -228,7 +240,7 @@
     </div>
     
     <!-- Socket.io Client CDN (Online multiplayer için) -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
     
     <!-- Scriptlerimizi hiyerarşik sırayla alt kısımda tek seferlik çağırıyoruz -->
     <script src="ui.js?v=2"></script>

@@ -716,12 +716,6 @@ document.addEventListener('DOMContentLoaded', function() {
         onlinePvpBtn.addEventListener('click', () => {
             if (window.gameState) {
                 window.gameState.setGameMode('online_pvp');
-                UI.showScreen('online-lobby-screen');
-                
-                // Oyuncu lobi ekranına girdiği an bağlantıyı hemen kuruyoruz
-                if (window.Network && !window.Network.isConnected()) {
-                    window.Network.connect();
-                }
             }
         });
     }
@@ -765,9 +759,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (window.Network && window.Network.isConnected()) {
-                window.Network.setCallback('onRoomCreated', (data) => {
-                    UI.showWaitingScreen('Oda oluşturuldu. Rakip bekleniyor...', true, data.roomCode);
-                });
                 window.Network.createPrivateRoom(playerName);
             } else {
                 UI.showInfoMessage('Sunucuyla bağlantı kuruluyor, lütfen birkaç saniye sonra tekrar deneyin...', 2500);

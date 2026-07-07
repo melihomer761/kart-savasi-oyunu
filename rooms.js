@@ -57,7 +57,7 @@ function addPlayerToRoom(roomId, socketId, playerName, role) {
         return false;
     }
     
-    rooms[roomId].players.push({ socketId, playerName, role });
+    rooms[roomId].players.push({ socketId, playerName, role, isReady: false, deck: null });
     playerRoomMap[socketId] = roomId;
     console.log(`${playerName} (${role}) odaya eklendi: ${roomId}`);
     return true;
@@ -123,8 +123,11 @@ function checkMatchmaking(io) {
         addPlayerToRoom(roomId, player2.socketId, player2.playerName, 'player2');
         
         // Odaya sok
-        io.to(player1.socketId).join(roomId);
-        io.to(player2.socketId).join(roomId);
+        const socket1 = io.sockets.sockets.get(player1.socketId);
+const socket2 = io.sockets.sockets.get(player2.socketId);
+
+if (socket1) socket1.join(roomId);
+if (socket2) socket2.join(roomId);
         
         // Oda durumunu güncelle
         rooms[roomId].status = 'ready';

@@ -1,3 +1,10 @@
+function getGameRandom(gameState) {
+    if (gameState && typeof gameState.getRandom === 'function') {
+        return gameState.getRandom();
+    }
+    return Math.random();
+}
+
 const cardEffects = {
     // Ateş Savaşçısı - Yanık hasarı
     1: {
@@ -241,7 +248,7 @@ const cardEffects = {
                 if (card.effects.attackCount < dodgeCount) {
                     card.effects.attackCount++;
 
-                    const randomChance = Math.random() * 100;
+                    const randomChance = getGameRandom(gameState) * 100;
                     if (randomChance < dodgeChance) {
                         gameState.addToBattleLog(`${card.name} saldırıdan kaçındı! 👻 (${card.effects.attackCount}/${dodgeCount} saldırı)`);
                         return 0; // Hasar tamamen sıfırlandı
@@ -778,13 +785,13 @@ const cardEffects = {
                     ? attacker.levelAbilities.doubleTargetChance[attacker.level - 1]
                     : 60;
 
-                if (Math.random() * 100 < doubleTargetChance) {
+                if (getGameRandom(gameState) * 100 < doubleTargetChance) {
                     const isPlayer1Card = gameState.player1Cards.includes(attacker);
                     const enemyCards = isPlayer1Card ? gameState.player2Cards : gameState.player1Cards;
                     const aliveEnemies = enemyCards.filter(c => c.health > 0 && c.instanceId !== target.instanceId);
 
                     if (aliveEnemies.length > 0) {
-                        const randomEnemy = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+                        const randomEnemy = aliveEnemies[Math.floor(getGameRandom(gameState) * aliveEnemies.length)];
                         gameState.waitingForAnimation = true;
 
                         setTimeout(() => {

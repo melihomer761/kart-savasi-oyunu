@@ -1,72 +1,64 @@
-# Kart Savaşı Oyunu
+# Kart Savaşı
 
-Bu proje, sıra tabanlı bir kart savaş oyunudur. Oyuncular, 11 farklı kart arasından 4 tanesini seçerek savaşır.
+Tarayıcıda çalışan kart savaş oyunu. Yerel PvP, PvC (AI) ve çevrimiçi PvP modları desteklenir.
 
-## Oyun Özellikleri
+## Kurulum
 
-- 11 farklı kart, her biri eşsiz yeteneklere sahip
-- Kart seçim ekranı
-- Hıza göre sıralanan saldırı düzeni
-- Tur sistemi
-- Savaş kayıtları
-- Çeşitli kart özellikleri ve efektleri
+```bash
+npm install
+npm start
+```
 
-## Nasıl Oynanır
+Sunucu `http://localhost:3000` adresinde hem oyun arayüzünü hem de Socket.io bağlantısını sunar.
 
-1. Oyunu açtığınızda, 11 karttan 4 tanesini seçmeniz istenecektir.
-2. Kartları seçtikten sonra "Oyunu Başlat" butonuna tıklayın.
-3. Oyun, hız değerine göre kartların saldırı sırasını belirler.
-4. Her kart sırayla otomatik olarak rakip kartlara saldırır.
-5. Tüm kartlar saldırdığında bir tur tamamlanır.
-6. Bir oyuncunun tüm kartları öldüğünde oyun sona erer.
+## Oyun Modları
 
-## Kart Özellikleri
+| Mod | Sunucu Gerekir mi? |
+|---|---|
+| Oyuncu vs Oyuncu (Yerel) | Hayır — `index.html` doğrudan açılabilir |
+| Oyuncu vs Bilgisayar | Hayır |
+| Çevrimiçi PvP | Evet — `npm start` |
 
-Her kartın kendine özgü özellikleri vardır:
+## Online Test Adımları
 
-- **Ateş Savaşçısı**: Saldırısı rakibini ve yanındaki kartları alev patlamasıyla vurur. Yan kartlar 11 hasar alır.
-- **Buz Büyücüsü**: Rakibini dondurarak hızını 2 azaltır.
-- **Taş Kalkan**: Gelen hasarın %20'sini engeller.
-- **Çevik Hançer**: Peş peşe 3 kez hasar verir.
-- **Hayalet**: İlk iki saldırıda %60 kaçınma şansına sahiptir.
-- **Kara Şövalye**: Her tur başında saldırı gücü 5 artar.
-- **Şifacı**: Her turda tüm dost kartlara +7 can verir. Maksimum canı aşabilir.
-- **Zehirli Ok**: Zehirlediği rakip ölene kadar her tur 8 hasar alır ve zırhı -1 azalır.
-- **Savaş Borazanı**: Yaşadığı sürece dost kartların saldırı gücü +4 artar.
-- **Kan Emici**: İki kez vurur ve verdiği hasarın %60'ı kadar kendi canını iyileştirir.
-- **İkiz Okçu**: Her saldırıda %60 şansla iki hedefi vurur. İkinci hedef rastgele seçilir.
+1. Terminalde `npm start` çalıştırın.
+2. İki tarayıcı sekmesi açın: `http://localhost:3000`
+3. Her iki sekmede **Çevrimiçi PvP** → kullanıcı adı girin → **Rastgele Eşleş**
+4. Eşleşme sonrası her iki tarafta kart seçim ekranı gelmeli.
+5. 4 kart seçip **Hazır** butonuna basın (her iki oyuncu).
+6. Sunucu terminalinde şu logları görmelisiniz:
+   - `player_ready event alındı:` (2 kez)
+   - `Oyun başlatılıyor...`
+7. Savaşta sıra sizdeyken hedef kartına tıklayın; hamle karşı tarafa yansımalı.
 
-## Geliştirme Planı
+### Özel Oda Testi
 
-### Halihazırda Olan Özellikler
-- ✅ Temel oyun mekanikleri
-- ✅ Kart seçim sistemi
-- ✅ Tur tabanlı savaş sistemi
-- ✅ Kart özellikleri ve efektleri
+1. Oyuncu 1: **Özel Oda Oluştur** → oda kodunu kopyala
+2. Oyuncu 2: kodu gir → **Odaya Katıl**
+3. Kart seçimi ve hazır akışı rastgele eşleşme ile aynıdır.
 
-### Eklenecek Özellikler
-- ❌ Farklı haritalar ve harita efektleri
-- ❌ Kart seviyelendirme sistemi
-- ❌ Ses efektleri ve müzik
+## Geliştirme Notları
 
-## Teknolojiler
+- Online test sırasında dosya kaydederken Go Live otomatik yenileme yapıyorsa bağlantı kopabilir. Online test için `http://localhost:3000` kullanın.
+- Sunucu loglarında `Oyuncu koptu` mesajının yanında kopma nedeni (`reason`) görünür.
+- Socket.IO istemci (CDN 4.8.3) ve sunucu sürümü eşleştirilmiştir.
 
-- HTML
-- CSS
-- JavaScript (Saf JavaScript, herhangi bir framework kullanılmamıştır)
+## Proje Yapısı
 
-## Nasıl Başlatılır
+```
+index.html      — Ana sayfa ve ekranlar
+gameState.js    — Oyun motoru
+gameLogic.js    — Kart yetenekleri
+cards.js        — Kart verileri
+ui.js           — Arayüz
+network.js      — Socket.io istemci
+server.js       — Express + Socket.io sunucu
+rooms.js        — Oda/kuyruk yönetimi
+validators.js   — Deste doğrulama
+```
 
-1. Dosyaları indirin
-2. İndirilen klasördeki `index.html` dosyasını bir web tarayıcısında açın
+## Online Olay Akışı
 
-## Tarayıcı Uyumluluğu
-
-Oyun şu tarayıcılarda test edilmiştir:
-- Google Chrome
-- Mozilla Firefox
-- Microsoft Edge
-
-## Lisans
-
-Bu proje açık kaynaklıdır ve eğitim amaçlı olarak geliştirilmiştir. 
+```
+join_queue → match_found → player_ready (x2) → game_started → player_action ↔ opponent_action → game_over
+```
