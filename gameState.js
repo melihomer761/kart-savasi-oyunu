@@ -188,7 +188,7 @@ class GameState {
             if (window.Network) {
                 Network.loadAuthFromStorage();
                 if (Network.isAuthenticated()) {
-                    Network.connect('http://localhost:3000');
+                    Network.connect();
                 }
             }
             if (typeof UI !== 'undefined' && UI.showScreen) {

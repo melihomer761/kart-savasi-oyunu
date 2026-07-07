@@ -771,7 +771,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.Network.loadAuthFromStorage();
         updateAuthUI();
         if (window.Network.isAuthenticated()) {
-            window.Network.connect('http://localhost:3000');
+            window.Network.connect();
         }
     }
 
@@ -787,7 +787,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 await window.Network.login(username, password);
                 updateAuthUI();
-                window.Network.connect('http://localhost:3000');
+                window.Network.connect();
                 UI.showInfoMessage('Giriş başarılı. Çevrimiçi modu kullanabilirsiniz.', 2500);
             } catch (error) {
                 showAuthError(error.message);
@@ -807,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 await window.Network.register(username, password);
                 updateAuthUI();
-                window.Network.connect('http://localhost:3000');
+                window.Network.connect();
                 UI.showInfoMessage('Kayıt başarılı. Çevrimiçi modu kullanabilirsiniz.', 2500);
             } catch (error) {
                 showAuthError(error.message);
@@ -834,7 +834,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (!window.Network.isConnected()) {
                 UI.showInfoMessage('Sunucuya bağlanılıyor, lütfen bekleyin...', 2500);
-                window.Network.connect('http://localhost:3000');
+                window.Network.connect();
                 return;
             }
             window.Network.joinQueue();
@@ -851,7 +851,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (!window.Network.isConnected()) {
                 UI.showInfoMessage('Sunucuya bağlanılıyor, lütfen bekleyin...', 2500);
-                window.Network.connect('http://localhost:3000');
+                window.Network.connect();
                 return;
             }
             window.Network.createPrivateRoom();
@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (!window.Network.isConnected()) {
                 UI.showInfoMessage('Sunucuya bağlanılıyor, lütfen bekleyin...', 2500);
-                window.Network.connect('http://localhost:3000');
+                window.Network.connect();
                 return;
             }
             window.Network.joinPrivateRoom(roomCode);

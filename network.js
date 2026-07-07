@@ -6,6 +6,9 @@ class NetworkManager {
         this.socket = null;
         this.connected = false;
         this.serverUrl = 'http://localhost:3000';
+        if (typeof window !== 'undefined' && window.location && window.location.origin && !window.location.origin.startsWith('file://')) {
+            this.serverUrl = window.location.origin;
+        }
         this.listenersRegistered = false;
         this.authToken = null;
         this.profile = null;
