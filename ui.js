@@ -312,8 +312,97 @@ const UI = {
         return card.element.classList.contains('selected');
     },
 
+    getPlayerRank: (rating) => {
+        if (rating >= 1400) return 'Efsane';
+        if (rating >= 1100) return 'Usta';
+        return 'Acemi';
+    },
+
+    getWinRate: (wins, gamesPlayed) => {
+        if (!gamesPlayed) return '—';
+        return `${Math.round((wins / gamesPlayed) * 100)}%`;
+    },
+
+    updateProfileStats: (profile) => {
+        if (!profile) return;
+        const rank = UI.getPlayerRank(profile.rating || 1000);
+        const winRate = UI.getWinRate(profile.wins || 0, profile.gamesPlayed || 0);
+
+        const profileUsername = document.getElementById('profile-username');
+        const profileRating = document.getElementById('profile-rating');
+        const mainProfileRating = document.getElementById('main-profile-rating');
+        const profileGames = document.getElementById('profile-games');
+        const profileWins = document.getElementById('profile-wins');
+        const profileLosses = document.getElementById('profile-losses');
+        const profileWinRate = document.getElementById('profile-win-rate');
+        const profileRank = document.getElementById('profile-rank');
+        const profileBadgeInline = document.getElementById('profile-badge-inline');
+        const mainProfileBadge = document.getElementById('main-profile-badge');
+        const mainProfileSummary = document.getElementById('main-profile-summary');
+
+        if (profileUsername) profileUsername.textContent = profile.username || '';
+        if (profileRating) profileRating.textContent = profile.rating || '1000';
+        if (mainProfileRating) mainProfileRating.textContent = profile.rating || '1000';
+        if (profileGames) profileGames.textContent = profile.gamesPlayed || '0';
+        if (profileWins) profileWins.textContent = profile.wins || '0';
+        if (profileLosses) profileLosses.textContent = profile.losses || '0';
+        if (profileWinRate) profileWinRate.textContent = winRate;
+        if (profileRank) profileRank.textContent = rank;
+        if (profileBadgeInline) profileBadgeInline.textContent = rank;
+        if (mainProfileBadge) mainProfileBadge.textContent = rank;
+        if (mainProfileSummary) mainProfileSummary.textContent = `${profile.username || ''} • ${rank} • ${profile.rating || 1000} Puan`;
+    },
+
+    showProfileModal: (profile) => {
+        if (!profile) return;
+        const modalId = 'profile-modal';
+        let modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'profile-modal-backdrop';
+
+        const content = document.createElement('div');
+        content.className = 'profile-modal';
+
+        const rank = UI.getPlayerRank(profile.rating || 1000);
+        const winRate = UI.getWinRate(profile.wins || 0, profile.gamesPlayed || 0);
+
+        content.innerHTML = `
+            <div class="profile-modal__header">
+                <div class="profile-modal__badge">${rank}</div>
+                <div>
+                    <h2>${profile.username || 'Oyuncu'}</h2>
+                    <p>${profile.rating || 1000} puan</p>
+                </div>
+            </div>
+            <div class="profile-modal__stats">
+                <div class="profile-stat-card"><span>Galibiyet</span><strong>${profile.wins || 0}</strong></div>
+                <div class="profile-stat-card"><span>Mağlubiyet</span><strong>${profile.losses || 0}</strong></div>
+                <div class="profile-stat-card"><span>Toplam Maç</span><strong>${profile.gamesPlayed || 0}</strong></div>
+                <div class="profile-stat-card"><span>Kazanma %</span><strong>${winRate}</strong></div>
+            </div>
+            <div class="profile-modal__meta">
+                <div><span>Kayıt Tarihi</span><strong>${profile.createdAt || 'Bilinmiyor'}</strong></div>
+            </div>
+            <button class="profile-modal__close">Kapat</button>
+        `;
+
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+
+        const closeBtn = content.querySelector('.profile-modal__close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => modal.remove());
+        }
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) modal.remove();
+        });
+    },
+
     // Yeni Özellik: Detaylı Maç Sonu İstatistik Modalı
-    showMatchStats: (gameState, winner) => {
+    showMatchStats: (gameState, winner, ratingDelta = null) => {
         const modalId = 'match-stats-modal';
         let modal = document.getElementById(modalId);
         if (modal) modal.remove();
@@ -354,6 +443,13 @@ const UI = {
         header.textContent = `🏆 Savaş Bitti: ${winner} Kazandı!`;
         header.style.cssText = "margin-bottom: 20px; color: #4CAF50;";
         content.appendChild(header);
+
+        if (ratingDelta !== null) {
+            const ratingLine = document.createElement('p');
+            ratingLine.textContent = ratingDelta > 0 ? `Rating değişimi: +${ratingDelta}` : `Rating değişimi: ${ratingDelta}`;
+            ratingLine.style.cssText = "margin-bottom: 12px; font-weight: bold; color: #1e88e5;";
+            content.appendChild(ratingLine);
+        }
 
         const subheader = document.createElement('h3');
         subheader.textContent = "Maç Sonu İstatistikleri";
@@ -708,6 +804,11 @@ document.addEventListener('DOMContentLoaded', function() {
             UI.showInfoMessage('Kart Savaşı oyununa hoş geldiniz! Lütfen bir oyun modu seçin.', 3000);
         }
     }, 1000);
+
+    if (window.campaignData) {
+        window.gameState = window.gameState || new GameState();
+        window.gameState.campaignData = window.campaignData;
+    }
     
 // Online Lobi Event Handler'ları - DÜZELTİLMİŞ SÜRÜM
     const onlinePvpBtn = document.getElementById('online-pvp-btn');
@@ -716,6 +817,84 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.gameState) {
                 window.gameState.setGameMode('online_pvp');
             }
+        });
+    }
+
+    const pvcButton = document.getElementById('pvc-mode-btn');
+    if (pvcButton) {
+        pvcButton.addEventListener('click', () => {
+            if (window.gameState) {
+                window.gameState.setGameMode('pvc');
+            }
+        });
+    }
+
+    const quickPvcBtn = document.getElementById('quick-pvc-btn');
+    if (quickPvcBtn) {
+        quickPvcBtn.addEventListener('click', () => {
+            if (window.gameState) {
+                window.gameState.campaignMode = false;
+                window.gameState.setGameMode('pvc');
+            }
+        });
+    }
+
+    const campaignPvcBtn = document.getElementById('campaign-pvc-btn');
+    if (campaignPvcBtn) {
+        campaignPvcBtn.addEventListener('click', () => {
+            if (window.gameState) {
+                window.gameState.setGameMode('campaign');
+            }
+        });
+    }
+
+    const pvcSubmodeBackBtn = document.getElementById('pvc-submode-back-btn');
+    if (pvcSubmodeBackBtn) {
+        pvcSubmodeBackBtn.addEventListener('click', () => {
+            UI.showScreen('game-mode-selection');
+        });
+    }
+
+    const campaignHubBackBtn = document.getElementById('campaign-hub-back-btn');
+    if (campaignHubBackBtn) {
+        campaignHubBackBtn.addEventListener('click', () => {
+            UI.showScreen('game-mode-selection');
+        });
+    }
+
+    const campaignEnterLoadoutBtn = document.getElementById('campaign-enter-loadout-btn');
+    if (campaignEnterLoadoutBtn) {
+        campaignEnterLoadoutBtn.addEventListener('click', () => {
+            if (window.gameState) {
+                window.gameState.showCampaignLoadout();
+            }
+        });
+    }
+
+    const campaignStartBtn = document.getElementById('campaign-start-btn');
+    if (campaignStartBtn) {
+        campaignStartBtn.addEventListener('click', () => {
+            if (window.gameState) {
+                window.gameState.startCampaignBattle();
+            }
+        });
+    }
+
+    const campaignRewardBackBtn = document.getElementById('campaign-reward-back-btn');
+    if (campaignRewardBackBtn) {
+        campaignRewardBackBtn.addEventListener('click', () => {
+            if (window.gameState) {
+                window.gameState.showCampaignHub();
+            }
+        });
+    }
+
+    const rewardList = document.getElementById('campaign-reward-list');
+    if (rewardList) {
+        rewardList.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-reward-id]');
+            if (!button || !window.gameState) return;
+            window.gameState.completeCampaignMission(button.dataset.rewardId);
         });
     }
     
@@ -734,6 +913,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileUsername = document.getElementById('profile-username');
     const profileRating = document.getElementById('profile-rating');
     const profileGames = document.getElementById('profile-games');
+    const profileWins = document.getElementById('profile-wins');
+    const profileLosses = document.getElementById('profile-losses');
+    const profileWinRate = document.getElementById('profile-win-rate');
+    const profileRank = document.getElementById('profile-rank');
+    const profileBadge = document.getElementById('profile-badge');
+    const profileSummary = document.getElementById('profile-summary');
+    const mainProfileCard = document.getElementById('main-profile-card');
     const authErrorMessage = document.getElementById('auth-error-message');
     const authUsernameInput = document.getElementById('auth-username-input');
     const authPasswordInput = document.getElementById('auth-password-input');
@@ -758,12 +944,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (authenticated && window.Network.profile) {
             if (authProfile) authProfile.style.display = 'block';
             if (authForm) authForm.style.display = 'none';
-            if (profileUsername) profileUsername.textContent = window.Network.profile.username || '';
-            if (profileRating) profileRating.textContent = window.Network.profile.rating || '0';
-            if (profileGames) profileGames.textContent = window.Network.profile.gamesPlayed || '0';
+            if (mainProfileCard) mainProfileCard.style.display = 'flex';
+            UI.updateProfileStats(window.Network.profile);
         } else {
             if (authProfile) authProfile.style.display = 'none';
             if (authForm) authForm.style.display = 'block';
+            if (mainProfileCard) mainProfileCard.style.display = 'none';
         }
     }
 
@@ -772,6 +958,12 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAuthUI();
         if (window.Network.isAuthenticated()) {
             window.Network.connect();
+            window.Network.fetchProfile().then(profile => {
+                if (profile) {
+                    UI.updateProfileStats(profile);
+                    UI.showInfoMessage('Profil güncellendi.', 1500);
+                }
+            });
         }
     }
 
@@ -788,6 +980,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 await window.Network.login(username, password);
                 updateAuthUI();
                 window.Network.connect();
+                await window.Network.fetchProfile();
                 UI.showInfoMessage('Giriş başarılı. Çevrimiçi modu kullanabilirsiniz.', 2500);
             } catch (error) {
                 showAuthError(error.message);
@@ -808,6 +1001,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 await window.Network.register(username, password);
                 updateAuthUI();
                 window.Network.connect();
+                await window.Network.fetchProfile();
                 UI.showInfoMessage('Kayıt başarılı. Çevrimiçi modu kullanabilirsiniz.', 2500);
             } catch (error) {
                 showAuthError(error.message);
@@ -824,6 +1018,18 @@ document.addEventListener('DOMContentLoaded', function() {
             UI.showInfoMessage('Çıkış yapıldı.', 2000);
         });
     }
+
+    const profileCardClickTargets = [authProfile, mainProfileCard];
+    profileCardClickTargets.forEach(card => {
+        if (card) {
+            card.addEventListener('click', () => {
+                const profile = window.Network && window.Network.getProfile ? window.Network.getProfile() : null;
+                if (profile) {
+                    UI.showProfileModal(profile);
+                }
+            });
+        }
+    });
 
     const joinQueueBtn = document.getElementById('join-queue-btn');
     if (joinQueueBtn) {

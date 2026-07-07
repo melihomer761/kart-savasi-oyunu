@@ -108,6 +108,33 @@ app.get('/api/profile', authenticateToken, (req, res) => {
     res.json({ profile });
 });
 
+app.get('/api/campaign', authenticateToken, (req, res) => {
+    const progress = db.ensureCampaignProgress(req.user.id);
+    res.json({ progress });
+});
+
+app.post('/api/campaign/complete', authenticateToken, (req, res) => {
+    const { missionId, rewardCardId } = req.body;
+    const progress = db.getCampaignProgress(req.user.id);
+    const completedMissions = Array.from(new Set([...(progress?.completedMissions || []), missionId]));
+    const cardBag = [...(progress?.cardBag || [])];
+    if (rewardCardId) {
+        cardBag.push({ baseId: rewardCardId, defaultLevel: 1 });
+    }
+
+    const updated = db.updateCampaignProgress(req.user.id, {
+        completedMissions,
+        cardBag
+    });
+    res.json({ progress: updated });
+});
+
+app.put('/api/campaign/loadout', authenticateToken, (req, res) => {
+    const { cardBag } = req.body;
+    const updated = db.updateCampaignProgress(req.user.id, { cardBag });
+    res.json({ progress: updated });
+});
+
 function isPlayer1Card(id) {
     return id >= 101 && id <= 104;
 }
@@ -212,12 +239,27 @@ io.on('connection', (socket) => {
                 room.status = 'finished';
             }
 
-            room.players.forEach(remainingPlayer => {
-                io.to(remainingPlayer.socketId).emit('opponent_disconnected', {
-                    opponent: player.playerName,
-                    reason: reason
+            const remainingPlayer = room.players.find(p => p.socketId !== socket.id);
+            if (remainingPlayer && remainingPlayer.userId) {
+                const updatedProfile = db.updatePlayerStats(remainingPlayer.userId, 'win');
+                room.players.forEach(remaining => {
+                    if (remaining.socketId === socket.id) return;
+                    io.to(remaining.socketId).emit('opponent_disconnected', {
+                        opponent: player.playerName,
+                        reason: reason,
+                        profile: updatedProfile,
+                        ratingDelta: 25
+                    });
                 });
-            });
+            } else {
+                room.players.forEach(remainingPlayer => {
+                    if (remainingPlayer.socketId === socket.id) return;
+                    io.to(remainingPlayer.socketId).emit('opponent_disconnected', {
+                        opponent: player.playerName,
+                        reason: reason
+                    });
+                });
+            }
         }
     });
 
@@ -327,23 +369,30 @@ io.on('connection', (socket) => {
 
         room.status = 'finished';
 
-        room.players.forEach(p => {
-            if (p.socketId !== socket.id) {
-                io.to(p.socketId).emit('game_over', { winnerRole });
-            }
-        });
+        let winnerProfile = null;
+        let loserProfile = null;
 
         if (room.players && room.players.length === 2) {
             const winner = room.players.find(p => p.role === winnerRole);
             const loser = room.players.find(p => p.role !== winnerRole);
 
             if (winner && winner.userId) {
-                db.updatePlayerStats(winner.userId, 'win');
+                winnerProfile = db.updatePlayerStats(winner.userId, 'win');
             }
             if (loser && loser.userId) {
-                db.updatePlayerStats(loser.userId, 'loss');
+                loserProfile = db.updatePlayerStats(loser.userId, 'loss');
             }
         }
+
+        room.players.forEach(p => {
+            const profile = p.role === winnerRole ? winnerProfile : loserProfile;
+            const ratingDelta = p.role === winnerRole ? 25 : -15;
+            io.to(p.socketId).emit('game_over', {
+                winnerRole,
+                profile,
+                ratingDelta
+            });
+        });
     });
 
     socket.on('test-message', (data) => {

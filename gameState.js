@@ -15,7 +15,11 @@ class GameState {
         this.selectedCardsCount = 0;
         this.battleLog = [];
 
-        this.gameMode = ''; // 'pvp', 'pvc' veya 'online_pvp'
+        this.gameMode = ''; // 'pvp', 'pvc', 'online_pvp' veya 'campaign'
+        this.campaignMode = false;
+        this.campaignProgress = null;
+        this.currentCampaignMission = null;
+        this.campaignRewardChoices = [];
         this.onlineRoomId = null; // Online oda ID'si
         this.onlineRole = null; // 'player1' veya 'player2'
         this.currentSelectingPlayer = 1;
@@ -153,21 +157,38 @@ class GameState {
 
             // 10. Rakip Oyunu Bitirdiğinde
             Network.setCallback('onGameOver', (data) => {
-                if (this.gameEnded) return;
+                if (data.profile && window.Network) {
+                    window.Network.setProfile(data.profile);
+                    if (typeof UI !== 'undefined' && UI.updateProfileStats) {
+                        UI.updateProfileStats(data.profile);
+                    }
+                }
+
+                if (this.gameEnded) {
+                    return;
+                }
+
                 const iWon = data.winnerRole === this.onlineRole;
                 const winnerName = iWon ? 'Sen' : 'Rakip';
                 this.gameEnded = true;
                 this.isGameStarted = false;
                 this.addToBattleLog(`${winnerName} KAZANDI! 🏆`);
+
                 if (typeof UI !== 'undefined' && UI.showMatchStats) {
-                    UI.showMatchStats(this, winnerName);
+                    UI.showMatchStats(this, winnerName, data.ratingDelta);
                 }
             });
 
             // 11. Rakip Oyundan Çıktığında
             Network.setCallback('onOpponentDisconnected', (data) => {
+                if (data.profile && window.Network) {
+                    window.Network.setProfile(data.profile);
+                    if (typeof UI !== 'undefined' && UI.updateProfileStats) {
+                        UI.updateProfileStats(data.profile);
+                    }
+                }
                 alert(`Rakibiniz (${data.opponent || 'Oyuncu'}) oyundan ayrıldı. Hükmen kazandınız!`);
-                this.endGame('Sen');
+                this.endGame('Sen', this.onlineRole);
             });
         }
     }
@@ -180,10 +201,12 @@ class GameState {
         this.initCards();
         
         if (mode === 'pvc') {
-            // PvC modu: AI config ekranını aç
-            if (typeof UI !== 'undefined' && UI.showAiConfigScreen) {
-                UI.showAiConfigScreen();
+            if (typeof UI !== 'undefined' && UI.showScreen) {
+                UI.showScreen('pvc-submode-screen');
             }
+        } else if (mode === 'campaign') {
+            this.campaignMode = true;
+            this.showCampaignHub();
         } else if (mode === 'online_pvp') {
             if (window.Network) {
                 Network.loadAuthFromStorage();
@@ -203,6 +226,85 @@ class GameState {
         }
     }
 
+    showCampaignHub() {
+        if (!window.Network || !window.Network.isAuthenticated()) {
+            if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                UI.showInfoMessage('Sefer modu için giriş yapmalısınız.', 2500);
+            }
+            return;
+        }
+        if (typeof UI !== 'undefined' && UI.showScreen) {
+            UI.showScreen('campaign-hub-screen');
+        }
+        this.renderCampaignMissionList();
+    }
+
+    async renderCampaignMissionList() {
+        const missionList = document.getElementById('campaign-mission-list');
+        const bagCount = document.getElementById('campaign-bag-count');
+        if (!missionList) return;
+
+        const missions = window.campaignData?.missions || [];
+        if (window.Network && window.Network.isAuthenticated()) {
+            const progress = await window.Network.fetchCampaign();
+            this.campaignProgress = progress;
+            const completed = new Set(progress?.completedMissions || []);
+            missionList.innerHTML = missions.map((mission) => `
+                <div class="campaign-mission-card">
+                    <strong>${mission.title}</strong>
+                    <p>${mission.description}</p>
+                    <button class="campaign-action-btn" data-mission-id="${mission.id}" ${completed.has(mission.id) ? 'disabled' : ''}>${completed.has(mission.id) ? 'Tamamlandı' : 'Seç'}</button>
+                </div>
+            `).join('');
+
+            missionList.querySelectorAll('button[data-mission-id]').forEach(button => {
+                if (button.disabled) return;
+                button.addEventListener('click', () => {
+                    this.currentCampaignMission = window.campaignData.missions.find(m => m.id === button.dataset.missionId);
+                    this.showCampaignLoadout();
+                });
+            });
+        }
+
+        if (bagCount) {
+            bagCount.textContent = (this.campaignProgress?.cardBag || window.campaignData?.starterDeck || []).length;
+        }
+    }
+
+    showCampaignLoadout() {
+        const loadoutScreen = document.getElementById('campaign-loadout-screen');
+        const list = document.getElementById('campaign-loadout-list');
+        if (!loadoutScreen || !list) return;
+        if (typeof UI !== 'undefined' && UI.showScreen) {
+            UI.showScreen('campaign-loadout-screen');
+        }
+        const cardBag = this.campaignProgress?.cardBag || [];
+        list.innerHTML = cardBag.length ? cardBag.map(card => `<div>${card.baseId} - Lv ${card.defaultLevel || 1}</div>`).join('') : '<p>Çantanızda kart yok.</p>';
+    }
+
+    async startCampaignBattle() {
+        if (!this.currentCampaignMission) return;
+        this.gameMode = 'campaign';
+        this.campaignMode = true;
+        await window.Network.fetchCampaign();
+        this.confirmAiConfig(this.currentCampaignMission.aiDeck);
+    }
+
+    async completeCampaignMission(rewardCardId) {
+        if (!window.Network || !window.Network.isAuthenticated() || !this.currentCampaignMission) return;
+        const progress = await window.Network.completeMission(this.currentCampaignMission.id, rewardCardId);
+        this.campaignProgress = progress;
+        this.campaignRewardChoices = [];
+        this.currentCampaignMission = null;
+        if (typeof UI !== 'undefined' && UI.showScreen) {
+            UI.showScreen('campaign-hub-screen');
+        }
+        this.renderCampaignMissionList();
+        if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+            UI.showInfoMessage('Görev tamamlandı. Çantaya kart eklendi.', 2500);
+        }
+    }
+
     confirmAiConfig(aiConfig) {
         this.aiConfig = {
             deckId: aiConfig.deckId,
@@ -213,6 +315,22 @@ class GameState {
         
         const configScreen = document.getElementById('pvc-config-screen');
         if (configScreen) configScreen.style.display = 'none';
+        if (this.campaignMode) {
+            const selectedCards = (this.campaignProgress?.cardBag || []).slice(0, 4);
+            this.player1SelectedCards = selectedCards.map(card => {
+                const template = this.availableCards.find(item => item.baseId === card.baseId);
+                if (!template) return null;
+                const clone = template.clone();
+                clone.level = card.defaultLevel || 1;
+                clone.updateLevelStats(clone.level);
+                return clone;
+            }).filter(Boolean);
+            this.player1Cards = this.player1SelectedCards.map(card => card.clone());
+            this.player1Cards.forEach(card => { card.owner = 1; });
+            this.generateAiDeck();
+            this.startGame();
+            return;
+        }
         this.showCardSelection();
         this.updatePlayerIndicator();
     }
@@ -1340,9 +1458,29 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
         this.isGameStarted = false;
         this.addToBattleLog(`${winner} KAZANDI! 🏆`);
 
+        if (this.gameMode === 'campaign' && winner === 'Oyuncu 1' && typeof UI !== 'undefined' && UI.showScreen) {
+            this.campaignRewardChoices = (window.campaignData?.missions || []).slice(0, 3).map((mission, idx) => ({ id: mission.id + `_${idx}`, baseId: [2, 4, 6][idx] }));
+            const rewardList = document.getElementById('campaign-reward-list');
+            if (rewardList) {
+                rewardList.innerHTML = this.campaignRewardChoices.map(choice => `<button class="campaign-action-btn" data-reward-id="${choice.baseId}">Kart ${choice.baseId}</button>`).join('');
+            }
+            UI.showScreen('campaign-reward-screen');
+            return;
+        }
+
         if (this.gameMode === 'online_pvp' && winnerRole && !this.executingOpponentAction) {
             if (window.Network && Network.isConnected()) {
                 Network.sendGameOver(this.onlineRoomId, winnerRole);
+                if (typeof Network.fetchProfile === 'function') {
+                    setTimeout(() => {
+                        Network.fetchProfile().then(profile => {
+                            if (profile && typeof UI !== 'undefined' && UI.updateProfileStats) {
+                                Network.setProfile(profile);
+                                UI.updateProfileStats(profile);
+                            }
+                        });
+                    }, 400);
+                }
             }
         }
 

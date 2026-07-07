@@ -281,9 +281,76 @@ class NetworkManager {
                 throw new Error(data.error || 'Profil alınamadı');
             }
             this.setProfile(data.profile);
+            if (typeof UI !== 'undefined' && UI.updateProfileStats) {
+                UI.updateProfileStats(data.profile);
+            }
             return data.profile;
         } catch (error) {
             console.warn('Profil alınırken hata:', error);
+            return null;
+        }
+    }
+
+    async fetchCampaign() {
+        if (!this.authToken) return null;
+        try {
+            const response = await fetch(`${this.serverUrl}/api/campaign`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.authToken}`
+                }
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Kampanya verisi alınamadı');
+            }
+            return data.progress;
+        } catch (error) {
+            console.warn('Kampanya verisi alınırken hata:', error);
+            return null;
+        }
+    }
+
+    async completeMission(missionId, rewardCardId) {
+        if (!this.authToken) return null;
+        try {
+            const response = await fetch(`${this.serverUrl}/api/campaign/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.authToken}`
+                },
+                body: JSON.stringify({ missionId, rewardCardId })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Görev tamamlanamadı');
+            }
+            return data.progress;
+        } catch (error) {
+            console.warn('Görev tamamlanırken hata:', error);
+            return null;
+        }
+    }
+
+    async saveLoadout(cardBag) {
+        if (!this.authToken) return null;
+        try {
+            const response = await fetch(`${this.serverUrl}/api/campaign/loadout`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.authToken}`
+                },
+                body: JSON.stringify({ cardBag })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Deste kaydedilemedi');
+            }
+            return data.progress;
+        } catch (error) {
+            console.warn('Deste kaydedilirken hata:', error);
             return null;
         }
     }

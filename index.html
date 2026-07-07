@@ -74,10 +74,31 @@
     <!-- Oyun Modu Seçim Ekranı -->
     <div class="game-mode-screen" id="game-mode-selection" style="display: none;">
         <h2>Oyun Modu Seçin</h2>
+        <div id="main-profile-card" class="profile-card profile-card--compact" style="display: none;">
+            <div class="profile-card__identity">
+                <div class="profile-card__badge" id="main-profile-badge">Acemi</div>
+                <div>
+                    <div class="profile-card__name" id="main-profile-summary">Oyuncu</div>
+                    <div class="profile-card__meta">Rating <span id="main-profile-rating">1000</span></div>
+                </div>
+            </div>
+        </div>
         <div class="game-mode-buttons">
             <button id="pvp-mode-btn">Oyuncu VS Oyuncu (Yerel)</button>
             <button id="pvc-mode-btn">Oyuncu VS Bilgisayar</button>
             <button id="online-pvp-btn">Çevrimiçi PvP (Online)</button>
+        </div>
+    </div>
+
+    <!-- PvC Alt Mod Seçim Ekranı -->
+    <div class="game-mode-screen" id="pvc-submode-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>Bilgisayara Karşı</h2>
+        <div class="selection-container" style="max-width: 500px; width: 90%;">
+            <div class="config-section" style="margin-bottom: 20px;">
+                <button id="quick-pvc-btn" class="campaign-action-btn">Hızlı Mod</button>
+                <button id="campaign-pvc-btn" class="campaign-action-btn">Sefer Modu</button>
+            </div>
+            <button id="pvc-submode-back-btn" class="campaign-action-btn campaign-action-btn--secondary">Geri Dön</button>
         </div>
     </div>
 
@@ -127,6 +148,39 @@
         </div>
     </div>
     
+    <!-- Kampanya Merkezi -->
+    <div class="game-mode-screen" id="campaign-hub-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>Sefer Merkezi</h2>
+        <div class="selection-container" style="max-width: 700px; width: 90%;">
+            <div id="campaign-mission-list"></div>
+            <div class="campaign-summary"><strong>Çanta:</strong> <span id="campaign-bag-count">0</span> kart</div>
+            <button id="campaign-enter-loadout-btn" class="campaign-action-btn">Deste Hazırla</button>
+            <button id="campaign-hub-back-btn" class="campaign-action-btn campaign-action-btn--secondary">Ana Menü</button>
+        </div>
+    </div>
+
+    <div class="game-mode-screen" id="campaign-loadout-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>Sefer Deste Hazırlığı</h2>
+        <div class="selection-container" style="max-width: 700px; width: 90%;">
+            <div id="campaign-loadout-list"></div>
+            <button id="campaign-start-btn" class="campaign-action-btn">Göreve Başla</button>
+            <button id="campaign-loadout-back-btn" class="campaign-action-btn campaign-action-btn--secondary">Geri Dön</button>
+        </div>
+    </div>
+
+    <div class="game-mode-screen" id="campaign-reward-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>Ödül Seç</h2>
+        <div class="selection-container" style="max-width: 700px; width: 90%;">
+            <div id="campaign-reward-list"></div>
+            <button id="campaign-reward-back-btn" class="campaign-action-btn campaign-action-btn--secondary">Merkeze Dön</button>
+        </div>
+    </div>
+
+    <div class="game-mode-screen" id="campaign-placeholder-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>Yakında</h2>
+        <p>Kart yükseltme atölyesi ve boss savaşları yakında eklenecek.</p>
+    </div>
+
     <!-- Online Lobi Ekranı -->
     <div class="game-mode-screen" id="online-lobby-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
         <h2>Çevrimiçi Lobi</h2>
@@ -135,10 +189,23 @@
             <!-- Kullanıcı Girişi -->
             <div class="config-section" style="margin-bottom: 20px;">
                 <h3 style="margin-bottom: 10px; font-size: 16px; color: #333; text-align: left;">Hesabınızla Giriş Yapın</h3>
-                <div id="auth-profile" style="display: none; padding: 12px; background: #f1f8e9; border-radius: 8px; margin-bottom: 12px;">
-                    <p style="margin: 0 0 6px; font-size: 14px;"><strong>Giriş yapıldı:</strong> <span id="profile-username"></span></p>
-                    <p style="margin: 0 0 10px; font-size: 13px; color: #555;">Rating: <span id="profile-rating"></span> | Oyun: <span id="profile-games"></span></p>
-                    <button id="logout-btn" style="padding: 10px 16px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Çıkış Yap</button>
+                <div id="auth-profile" class="profile-card profile-card--inline" style="display: none; margin-bottom: 12px;">
+                    <div class="profile-card__identity">
+                        <div class="profile-card__badge" id="profile-badge-inline">Acemi</div>
+                        <div>
+                            <div class="profile-card__name" id="profile-username">Oyuncu</div>
+                            <div class="profile-card__meta">Rating <span id="profile-rating">1000</span></div>
+                        </div>
+                    </div>
+                    <div class="profile-card__stats">
+                        <div><span>Galibiyet</span><strong id="profile-wins">0</strong></div>
+                        <div><span>Mağlubiyet</span><strong id="profile-losses">0</strong></div>
+                        <div><span>Win %</span><strong id="profile-win-rate">—</strong></div>
+                        <div><span>Rütbe</span><strong id="profile-rank">Acemi</strong></div>
+                    </div>
+                    <div class="profile-card__actions">
+                        <button id="logout-btn" class="profile-card__button profile-card__button--danger">Çıkış Yap</button>
+                    </div>
                 </div>
                 <div id="auth-form" style="display: none;">
                     <input type="text" id="auth-username-input" placeholder="Kullanıcı adınızı girin" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; margin-bottom: 10px;">
