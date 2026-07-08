@@ -333,7 +333,7 @@ class NetworkManager {
         }
     }
 
-    async saveLoadout(cardBag) {
+    async saveLoadout(cardBag, updates = {}) {
         if (!this.authToken) return null;
         try {
             const response = await fetch(`${this.serverUrl}/api/campaign/loadout`, {
@@ -342,7 +342,7 @@ class NetworkManager {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.authToken}`
                 },
-                body: JSON.stringify({ cardBag })
+                body: JSON.stringify({ cardBag, ...updates })
             });
             const data = await response.json();
             if (!response.ok) {

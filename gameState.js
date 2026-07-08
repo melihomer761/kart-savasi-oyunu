@@ -227,16 +227,33 @@ class GameState {
     }
 
     showCampaignHub() {
+        console.log('showCampaignHub çağrıldı');
         if (!window.Network || !window.Network.isAuthenticated()) {
+            console.log('Giriş yapılmamış');
             if (typeof UI !== 'undefined' && UI.showInfoMessage) {
                 UI.showInfoMessage('Sefer modu için giriş yapmalısınız.', 2500);
             }
             return;
         }
+        console.log('Giriş yapılmış, sefer merkezi açılıyor');
         if (typeof UI !== 'undefined' && UI.showScreen) {
             UI.showScreen('campaign-hub-screen');
         }
         this.renderCampaignMissionList();
+        this.updateCampaignHUD();
+    }
+
+    updateCampaignHUD() {
+        const hudHealth = document.getElementById('hud-health');
+        const hudGold = document.getElementById('hud-gold');
+        
+        if (hudHealth && this.campaignProgress) {
+            hudHealth.textContent = this.campaignProgress.currentHealth || 300;
+        }
+        
+        if (hudGold && this.campaignProgress) {
+            hudGold.textContent = this.campaignProgress.gold || 0;
+        }
     }
 
     async renderCampaignMissionList() {
@@ -244,26 +261,64 @@ class GameState {
         const bagCount = document.getElementById('campaign-bag-count');
         if (!missionList) return;
 
-        const missions = window.campaignData?.missions || [];
+        const campaignMap = window.campaignData?.campaignMap || [];
         if (window.Network && window.Network.isAuthenticated()) {
             const progress = await window.Network.fetchCampaign();
             this.campaignProgress = progress;
-            const completed = new Set(progress?.completedMissions || []);
-            missionList.innerHTML = missions.map((mission) => `
-                <div class="campaign-mission-card">
-                    <strong>${mission.title}</strong>
-                    <p>${mission.description}</p>
-                    <button class="campaign-action-btn" data-mission-id="${mission.id}" ${completed.has(mission.id) ? 'disabled' : ''}>${completed.has(mission.id) ? 'Tamamlandı' : 'Seç'}</button>
-                </div>
-            `).join('');
+            const currentNode = progress?.currentNode || 0;
+            const completedNodes = new Set(progress?.completedNodes || []);
 
-            missionList.querySelectorAll('button[data-mission-id]').forEach(button => {
-                if (button.disabled) return;
-                button.addEventListener('click', () => {
-                    this.currentCampaignMission = window.campaignData.missions.find(m => m.id === button.dataset.missionId);
-                    this.showCampaignLoadout();
+            // Yuvarlak harita render et
+            missionList.innerHTML = `
+                <div class="mission-circles-container">
+                    ${campaignMap.map((node, index) => {
+                        const isCurrent = index === currentNode;
+                        const isCompleted = completedNodes.has(node.id);
+                        const isLocked = index > currentNode;
+                        
+                        let circleClass = 'mission-circle';
+                        if (isCurrent) circleClass += ' active';
+                        if (isCompleted) circleClass += ' completed';
+                        if (isLocked) circleClass += ' locked';
+                        
+                        return `
+                            <div class="${circleClass}" data-node-id="${node.id}" title="${node.title}: ${node.description}">
+                                <span class="node-number">${node.id}</span>
+                                <span class="node-type">${this.getNodeTypeIcon(node.type)}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <button id="start-node-btn" class="campaign-action-btn">Bölüm Başlat</button>
+            `;
+
+            // Yuvarlaklara tıklama event'i
+            missionList.querySelectorAll('.mission-circle').forEach(circle => {
+                circle.addEventListener('click', () => {
+                    const nodeId = parseInt(circle.dataset.nodeId);
+                    const progressCurrentNode = this.campaignProgress?.currentNode || 0;
+                    
+                    // Sadece mevcut node veya tamamlanmış node'lara tıklanabilir
+                    if (nodeId <= progressCurrentNode) {
+                        this.startCampaignNode(nodeId);
+                    }
                 });
             });
+
+            // Bölüm başlat butonu - event listener'ı ekle
+            const startBtn = document.getElementById('start-node-btn');
+            if (startBtn) {
+                // Eski event listener'ları temizle
+                const newStartBtn = startBtn.cloneNode(true);
+                startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+                
+                newStartBtn.addEventListener('click', () => {
+                    console.log('Bölüm başlat butonu tıklandı, currentNode:', currentNode);
+                    this.startCampaignNode(currentNode);
+                });
+            } else {
+                console.error('start-node-btn bulunamadı!');
+            }
         }
 
         if (bagCount) {
@@ -271,22 +326,220 @@ class GameState {
         }
     }
 
+    getNodeTypeIcon(type) {
+        switch(type) {
+            case 'battle': return '⚔️';
+            case 'campfire': return '🔥';
+            case 'market': return '🏪';
+            case 'workshop': return '🔨';
+            case 'boss': return '👑';
+            default: return '❓';
+        }
+    }
+
+    async startCampaignNode(nodeId) {
+        console.log('startCampaignNode çağrıldı, nodeId:', nodeId);
+        const node = window.campaignData?.getNodeById(nodeId);
+        console.log('Node:', node);
+        if (!node) {
+            console.error('Node bulunamadı, nodeId:', nodeId);
+            return;
+        }
+
+        this.currentCampaignNode = node;
+        console.log('Node type:', node.type);
+
+        switch(node.type) {
+            case 'battle':
+            case 'boss':
+                console.log('Battle/Boss node, loadout açılıyor');
+                this.currentCampaignMission = {
+                    id: `node_${node.id}`,
+                    title: node.title,
+                    description: node.description,
+                    aiDeck: node.aiDeck
+                };
+                this.showCampaignLoadout();
+                break;
+            case 'campfire':
+                console.log('Campfire node, campfire açılıyor');
+                this.showCampfireScreen();
+                break;
+            case 'market':
+                console.log('Market node, market açılıyor');
+                this.showMarketScreen();
+                break;
+            case 'workshop':
+                console.log('Workshop node, workshop açılıyor');
+                this.showWorkshopScreen();
+                break;
+            default:
+                console.error('Bilinmeyen node type:', node.type);
+        }
+    }
+
     showCampaignLoadout() {
+        console.log('showCampaignLoadout çağrıldı');
         const loadoutScreen = document.getElementById('campaign-loadout-screen');
         const list = document.getElementById('campaign-loadout-list');
         if (!loadoutScreen || !list) return;
         if (typeof UI !== 'undefined' && UI.showScreen) {
             UI.showScreen('campaign-loadout-screen');
         }
+
         const cardBag = this.campaignProgress?.cardBag || [];
-        list.innerHTML = cardBag.length ? cardBag.map(card => `<div>${card.baseId} - Lv ${card.defaultLevel || 1}</div>`).join('') : '<p>Çantanızda kart yok.</p>';
+        console.log('cardBag:', cardBag, 'length:', cardBag.length);
+        this.campaignSelectedCards = []; // Seçili kartları sıfırla
+
+        if (cardBag.length === 0) {
+            console.log('CardBag boş, mesaj gösteriliyor');
+            list.innerHTML = '<p>Çantanızda kart yok.</p>';
+            return;
+        }
+
+        console.log('CardBag dolu, kartlar render ediliyor');
+        console.log('CardBag detayları:', cardBag.map(c => ({ baseId: c.baseId, defaultLevel: c.defaultLevel })));
+        // Kartları gerçek kart olarak göster
+        list.innerHTML = `
+            <div class="loadout-cards-container">
+                ${cardBag.map((card, index) => {
+                    console.log(`Kart ${index}:`, card);
+                    if (!card.baseId) {
+                        console.log('Kart baseId null, atlanıyor, index:', index);
+                        return '';
+                    }
+                    const cardData = window.cardsData?.find(c => c.id === card.baseId);
+                    if (!cardData) {
+                        console.log('CardData bulunamadı, baseId:', card.baseId);
+                        return '';
+                    }
+                    
+                    const level = card.defaultLevel || 1;
+                    const cardObj = new Card(cardData);
+                    cardObj.baseId = cardData.id;
+                    cardObj.level = level;
+                    cardObj.updateLevelStats(level);
+                    const cardElement = cardObj.createCardElement();
+                    
+                    return `
+                        <div class="loadout-card" data-card-index="${index}" data-card-id="${card.baseId}">
+                            ${cardElement.outerHTML}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <div class="loadout-summary">
+                <p>Seçili: <span id="selected-count">0</span>/4 kart</p>
+            </div>
+        `;
+
+        // Kart seçim event'leri
+        list.querySelectorAll('.loadout-card').forEach(cardEl => {
+            cardEl.addEventListener('click', () => {
+                const cardIndex = parseInt(cardEl.dataset.cardIndex);
+                this.toggleLoadoutCard(cardIndex, cardEl);
+            });
+        });
+
+        // "Göreve Başla" butonu event'ini güncelle
+        const startBtn = document.getElementById('campaign-start-btn');
+        if (startBtn) {
+            // Eski event listener'ı kaldır
+            const newStartBtn = startBtn.cloneNode(true);
+            startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+            
+            newStartBtn.addEventListener('click', () => {
+                if (this.campaignSelectedCards.length !== 4) {
+                    if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                        UI.showInfoMessage('4 kart seçmelisin!', 2000);
+                    }
+                    return;
+                }
+                this.startCampaignBattle();
+            });
+        }
+
+        // "Geri Dön" butonu
+        const backBtn = document.getElementById('campaign-loadout-back-btn');
+        if (backBtn) {
+            const newBackBtn = backBtn.cloneNode(true);
+            backBtn.parentNode.replaceChild(newBackBtn, backBtn);
+            
+            newBackBtn.addEventListener('click', () => {
+                this.showCampaignHub();
+            });
+        }
+    }
+
+    toggleLoadoutCard(cardIndex, cardEl) {
+        const cardBag = this.campaignProgress?.cardBag || [];
+        const card = cardBag[cardIndex];
+        
+        const selectedIndex = this.campaignSelectedCards.findIndex(c => c.baseId === card.baseId);
+        
+        if (selectedIndex >= 0) {
+            // Zaten seçili, kaldır
+            this.campaignSelectedCards.splice(selectedIndex, 1);
+            cardEl.classList.remove('selected');
+        } else {
+            // Seçili değil, ekle (max 4)
+            if (this.campaignSelectedCards.length >= 4) {
+                if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                    UI.showInfoMessage('En fazla 4 kart seçebilirsin!', 2000);
+                }
+                return;
+            }
+            this.campaignSelectedCards.push(card);
+            cardEl.classList.add('selected');
+        }
+
+        // Seçili sayısını güncelle
+        const countEl = document.getElementById('selected-count');
+        if (countEl) {
+            countEl.textContent = this.campaignSelectedCards.length;
+        }
+
+        // Seçilen kartları DB'ye kaydet
+        if (window.Network && window.Network.isAuthenticated()) {
+            window.Network.saveLoadout(this.campaignProgress?.cardBag || []);
+        }
     }
 
     async startCampaignBattle() {
         if (!this.currentCampaignMission) return;
+        
+        // Seçili kartları kontrol et
+        if (!this.campaignSelectedCards || this.campaignSelectedCards.length !== 4) {
+            if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                UI.showInfoMessage('4 kart seçmelisin!', 2000);
+            }
+            return;
+        }
+        
         this.gameMode = 'campaign';
         this.campaignMode = true;
         await window.Network.fetchCampaign();
+        
+        // Seçili kartları player1Cards'a ata
+        this.player1SelectedCards = this.campaignSelectedCards.map(card => {
+            const template = this.availableCards.find(item => item.baseId === card.baseId);
+            if (!template) return null;
+            const clone = template.clone();
+            clone.level = card.defaultLevel || 1;
+            clone.updateLevelStats(clone.level);
+            return clone;
+        }).filter(Boolean);
+        
+        this.player1Cards = this.player1SelectedCards.map(card => card.clone());
+        this.player1Cards.forEach(card => { card.owner = 1; });
+        
+        // Loadout ekranını kapat
+        const loadoutScreen = document.getElementById('campaign-loadout-screen');
+        if (loadoutScreen) loadoutScreen.style.display = 'none';
+        
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) gameContainer.style.display = 'flex';
+        
         this.confirmAiConfig(this.currentCampaignMission.aiDeck);
     }
 
@@ -316,18 +569,54 @@ class GameState {
         const configScreen = document.getElementById('pvc-config-screen');
         if (configScreen) configScreen.style.display = 'none';
         if (this.campaignMode) {
-            const selectedCards = (this.campaignProgress?.cardBag || []).slice(0, 4);
-            this.player1SelectedCards = selectedCards.map(card => {
-                const template = this.availableCards.find(item => item.baseId === card.baseId);
-                if (!template) return null;
-                const clone = template.clone();
-                clone.level = card.defaultLevel || 1;
-                clone.updateLevelStats(clone.level);
-                return clone;
-            }).filter(Boolean);
+            // Campaign modunda zaten startCampaignBattle'da player1SelectedCards atandı
+            // Bu kartları kullan
+            if (this.campaignSelectedCards && this.campaignSelectedCards.length === 4) {
+                this.player1SelectedCards = this.campaignSelectedCards.map(card => {
+                    const template = this.availableCards.find(item => item.baseId === card.baseId);
+                    if (!template) return null;
+                    const clone = template.clone();
+                    clone.level = card.defaultLevel || 1;
+                    clone.updateLevelStats(clone.level);
+                    return clone;
+                }).filter(Boolean);
+            } else {
+                // Fallback: cardBag'dan ilk 4 kartı al
+                const selectedCards = (this.campaignProgress?.cardBag || []).slice(0, 4);
+                this.player1SelectedCards = selectedCards.map(card => {
+                    const template = this.availableCards.find(item => item.baseId === card.baseId);
+                    if (!template) return null;
+                    const clone = template.clone();
+                    clone.level = card.defaultLevel || 1;
+                    clone.updateLevelStats(clone.level);
+                    return clone;
+                }).filter(Boolean);
+            }
+            
             this.player1Cards = this.player1SelectedCards.map(card => card.clone());
             this.player1Cards.forEach(card => { card.owner = 1; });
-            this.generateAiDeck();
+            
+            // Campaign modunda AI desteği oluştur (4 tane Gardiyan)
+            this.player2SelectedCards = [];
+            const guardianData = window.cardsData?.find(c => c.id === 0);
+            console.log('Gardiyan data:', guardianData);
+            if (guardianData) {
+                for (let i = 0; i < 4; i++) {
+                    const guardianCard = new Card(guardianData);
+                    guardianCard.baseId = guardianData.id;
+                    guardianCard.level = 1;
+                    guardianCard.updateLevelStats(1);
+                    this.player2SelectedCards.push(guardianCard);
+                }
+                console.log('Gardiyan kartları oluşturuldu, count:', this.player2SelectedCards.length);
+            } else {
+                console.error('Gardiyan kartı bulunamadı!');
+            }
+            
+            this.player2Cards = this.player2SelectedCards.map(card => card.clone());
+            this.player2Cards.forEach(card => { card.owner = 2; });
+            console.log('Player2 kartları:', this.player2Cards.map(c => c.name));
+            
             this.startGame();
             return;
         }
@@ -765,6 +1054,14 @@ class GameState {
             }
             this.player1Cards = this.player1SelectedCards.map(card => card.clone());
             this.player2Cards = this.player2SelectedCards.map(card => card.clone());
+        } else if (this.campaignMode) {
+            // Campaign modunda player2 kartları zaten oluşturuldu, override etme
+            if (this.player1SelectedCards.length !== 4) {
+                alert("Lütfen 4 kart seçin!");
+                return;
+            }
+            this.player1Cards = this.player1SelectedCards.map(card => card.clone());
+            // Player2 kartları zaten Gardiyan olarak ayarlandı
         } else {
             if (this.player1SelectedCards.length !== 4) {
                 alert("Lütfen 4 kart seçin!");
@@ -1068,7 +1365,7 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             
             this.highlightActiveCard(kart);
             
-            if (this.gameMode === 'pvc' && this.currentPlayerTurn === 2) {
+            if ((this.gameMode === 'pvc' || this.campaignMode) && this.currentPlayerTurn === 2) {
                 this.waitingForTarget = false;
                 const turnStatus = document.getElementById('turn-status');
                 if (turnStatus) {
@@ -1404,7 +1701,11 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
                 activePlayerElement.className = '';
             }
             
-            if (this.checkForWinner()) return;
+            console.log('executeAttack - checkForWinner çağrılıyor');
+            if (this.checkForWinner()) {
+                console.log('executeAttack - checkForWinner true döndü, oyun bitti');
+                return;
+            }
             
             await new Promise(resolve => setTimeout(resolve, 800));
             this.determineTurnOrder();
@@ -1452,19 +1753,20 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
         return false;
     }
 
-    endGame(winner, winnerRole = null) {
+    async endGame(winner, winnerRole = null) {
         if (this.gameEnded) return;
         this.gameEnded = true;
         this.isGameStarted = false;
         this.addToBattleLog(`${winner} KAZANDI! 🏆`);
 
-        if (this.gameMode === 'campaign' && winner === 'Oyuncu 1' && typeof UI !== 'undefined' && UI.showScreen) {
-            this.campaignRewardChoices = (window.campaignData?.missions || []).slice(0, 3).map((mission, idx) => ({ id: mission.id + `_${idx}`, baseId: [2, 4, 6][idx] }));
-            const rewardList = document.getElementById('campaign-reward-list');
-            if (rewardList) {
-                rewardList.innerHTML = this.campaignRewardChoices.map(choice => `<button class="campaign-action-btn" data-reward-id="${choice.baseId}">Kart ${choice.baseId}</button>`).join('');
+        if (this.gameMode === 'campaign') {
+            if (winner === 'Oyuncu 1') {
+                // Kazanma durumu - altın kazan ve reward ekranı göster
+                await this.handleCampaignWin();
+            } else {
+                // Kaybetme durumu - hasar al
+                await this.handleCampaignLoss();
             }
-            UI.showScreen('campaign-reward-screen');
             return;
         }
 
@@ -1491,6 +1793,463 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
                 this.askForNewGame();
             }, 1000);
         }
+    }
+
+    async handleCampaignWin() {
+        console.log('handleCampaignWin çağrıldı');
+        // Altın kazan (normal savaş: 50, boss: 100)
+        const goldReward = this.currentCampaignNode?.type === 'boss' ? 100 : 50;
+        console.log('Altın ödülü:', goldReward);
+        await this.addGold(goldReward);
+        
+        // Node'u tamamlandı olarak işaretle
+        const nodeId = this.currentCampaignNode?.id;
+        console.log('Node ID:', nodeId);
+        if (nodeId !== undefined) {
+            const completedNodes = [...(this.campaignProgress?.completedNodes || []), nodeId];
+            const nextNode = window.campaignData?.getNextNode(nodeId);
+            const nextNodeId = nextNode ? nextNode.id : nodeId;
+            console.log('Sonraki node ID:', nextNodeId);
+            
+            const updated = await window.Network.saveLoadout(this.campaignProgress?.cardBag || [], {
+                completedNodes,
+                currentNode: nextNodeId
+            });
+            if (updated) {
+                this.campaignProgress = updated;
+                console.log('Campaign progress güncellendi:', updated);
+            }
+        }
+
+        this.updateCampaignHUD();
+        console.log('Reward ekranı gösteriliyor');
+        this.showRewardScreen();
+    }
+
+    async handleCampaignLoss() {
+        // Düşmanların kalan canını topla
+        const totalEnemyHealth = this.player2Cards
+            .filter(card => card.health > 0)
+            .reduce((sum, card) => sum + card.health, 0);
+
+        // Oyuncu canından düş
+        const currentHealth = this.campaignProgress?.currentHealth || 300;
+        const newHealth = Math.max(0, currentHealth - totalEnemyHealth);
+
+        // DB'ye güncelle
+        if (window.Network && window.Network.isAuthenticated()) {
+            const updated = await window.Network.saveLoadout(this.campaignProgress?.cardBag || [], {
+                currentHealth: newHealth
+            });
+            if (updated) {
+                this.campaignProgress = updated;
+            }
+        }
+
+        this.updateCampaignHUD();
+
+        if (newHealth <= 0) {
+            // Sefer bitti
+            if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                UI.showInfoMessage('Canın tükendi! Sefer bitti. Sefer sıfırlanıyor.', 4000);
+            }
+            // Seferi sıfırla
+            await this.resetCampaign();
+        } else {
+            if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                UI.showInfoMessage(`Kaybettin! ${totalEnemyHealth} hasar aldın. Kalan can: ${newHealth}`, 3000);
+            }
+            // Sefer merkezine dön
+            setTimeout(() => {
+                this.showCampaignHub();
+            }, 1000);
+        }
+    }
+
+    async addGold(amount) {
+        if (!window.Network || !window.Network.isAuthenticated()) return;
+        
+        const currentGold = this.campaignProgress?.gold || 0;
+        const newGold = currentGold + amount;
+        
+        const updated = await window.Network.saveLoadout(this.campaignProgress?.cardBag || [], {
+            gold: newGold
+        });
+        if (updated) {
+            this.campaignProgress = updated;
+        }
+        
+        this.updateCampaignHUD();
+    }
+
+    async resetCampaign() {
+        if (!window.Network || !window.Network.isAuthenticated()) return;
+        
+        // Seferi sıfırla - currentNode: 0, currentHealth: 300, gold: 0
+        const updated = await window.Network.saveLoadout(this.campaignProgress?.cardBag || [], {
+            currentNode: 0,
+            currentHealth: 300,
+            gold: 0,
+            completedNodes: []
+        });
+        if (updated) {
+            this.campaignProgress = updated;
+        }
+        
+        this.updateCampaignHUD();
+        this.showCampaignHub();
+    }
+
+    showRewardScreen() {
+        console.log('showRewardScreen çağrıldı');
+        if (typeof UI !== 'undefined' && UI.showScreen) {
+            UI.showScreen('campaign-reward-screen');
+        }
+
+        const rewardList = document.getElementById('campaign-reward-list');
+        if (!rewardList) return;
+
+        // Oyuncunun olmadığı 3 rastgele kart seç
+        const rewardCards = this.getRandomRewardCards(3);
+        console.log('Reward kartları:', rewardCards);
+        
+        rewardList.innerHTML = `
+            <div class="reward-cards-container">
+                ${rewardCards.map(card => {
+                    const cardData = window.cardsData?.find(c => c.id === card.baseId);
+                    if (!cardData) return '';
+                    const cardObj = new Card(cardData);
+                    cardObj.baseId = cardData.id;
+                    cardObj.level = 1;
+                    cardObj.updateLevelStats(1);
+                    const cardElement = cardObj.createCardElement();
+                    return `
+                        <div class="reward-card" data-card-id="${card.baseId}">
+                            ${cardElement.outerHTML}
+                            <button class="campaign-action-btn select-reward-btn" data-card-id="${card.baseId}">Seç</button>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <button id="skip-reward-btn" class="campaign-action-btn campaign-action-btn--secondary">Geç (+10 Altın)</button>
+        `;
+
+        // Kart seçim event'leri
+        rewardList.querySelectorAll('.select-reward-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const cardId = parseInt(btn.dataset.cardId);
+                this.addToCardBag(cardId);
+            });
+        });
+
+        // Skip butonu
+        const skipBtn = document.getElementById('skip-reward-btn');
+        if (skipBtn) {
+            skipBtn.addEventListener('click', () => {
+                this.skipReward();
+            });
+        }
+    }
+
+    getRandomRewardCards(count) {
+        const allCards = window.cardsData || [];
+        const ownedCardIds = new Set((this.campaignProgress?.cardBag || []).map(c => c.baseId));
+        
+        console.log('getRandomRewardCards - allCards:', allCards.length, 'ownedCardIds:', ownedCardIds);
+        
+        const availableCards = allCards.filter(card => !ownedCardIds.has(card.id));
+        console.log('getRandomRewardCards - availableCards:', availableCards.length);
+        
+        if (availableCards.length === 0) {
+            console.error('getRandomRewardCards - availableCards boş! Tüm kartlar zaten sahip olunmuş.');
+            return [];
+        }
+        
+        // Karıştır ve rastgele seç
+        const shuffled = availableCards.sort(() => Math.random() - 0.5);
+        const result = shuffled.slice(0, count);
+        console.log('getRandomRewardCards - result:', result.map(c => c.name));
+        return result;
+    }
+
+    async addToCardBag(cardId) {
+        if (!window.Network || !window.Network.isAuthenticated()) return;
+
+        const newCard = { baseId: cardId, defaultLevel: 1 };
+        const updatedCardBag = [...(this.campaignProgress?.cardBag || []), newCard];
+
+        const updated = await window.Network.saveLoadout(updatedCardBag);
+        if (updated) {
+            this.campaignProgress = updated;
+        }
+
+        if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+            UI.showInfoMessage('Kart çantana eklendi!', 2000);
+        }
+
+        // Sefer merkezine dön
+        setTimeout(() => {
+            this.showCampaignHub();
+        }, 1000);
+    }
+
+    async skipReward() {
+        // Az altın ver (10 gold)
+        await this.addGold(10);
+
+        if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+            UI.showInfoMessage('Geçtin. +10 Altın kazandın.', 2000);
+        }
+
+        // Sefer merkezine dön
+        setTimeout(() => {
+            this.showCampaignHub();
+        }, 1000);
+    }
+
+    showCampfireScreen() {
+        if (typeof UI !== 'undefined' && UI.showScreen) {
+            UI.showScreen('campaign-campfire-screen');
+        }
+
+        // Can ve altın değerlerini göster
+        const currentHealthEl = document.getElementById('campfire-current-health');
+        const goldEl = document.getElementById('campfire-gold');
+
+        if (currentHealthEl) {
+            currentHealthEl.textContent = this.campaignProgress?.currentHealth || 300;
+        }
+
+        if (goldEl) {
+            goldEl.textContent = this.campaignProgress?.gold || 0;
+        }
+
+        // Can yenileme butonları
+        const heal50Btn = document.getElementById('heal-50-btn');
+        const heal100Btn = document.getElementById('heal-100-btn');
+        const healFullBtn = document.getElementById('heal-full-btn');
+        const backBtn = document.getElementById('campfire-back-btn');
+
+        if (heal50Btn) {
+            heal50Btn.addEventListener('click', () => this.healAtCampfire(50, 10));
+        }
+
+        if (heal100Btn) {
+            heal100Btn.addEventListener('click', () => this.healAtCampfire(100, 20));
+        }
+
+        if (healFullBtn) {
+            healFullBtn.addEventListener('click', () => this.healAtCampfire(300, 50));
+        }
+
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                // Node'u tamamlandı olarak işaretle
+                this.completeCampfireNode();
+            });
+        }
+    }
+
+    async healAtCampfire(healAmount, cost) {
+        const currentGold = this.campaignProgress?.gold || 0;
+        const currentHealth = this.campaignProgress?.currentHealth || 300;
+
+        if (currentGold < cost) {
+            if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                UI.showInfoMessage('Yeterli altın yok!', 2000);
+            }
+            return;
+        }
+
+        if (currentHealth >= 300) {
+            if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                UI.showInfoMessage('Zaten tam candasın!', 2000);
+            }
+            return;
+        }
+
+        // Altın düş
+        const newGold = currentGold - cost;
+        // Can artır (max 300)
+        const newHealth = Math.min(300, currentHealth + healAmount);
+
+        // DB'ye güncelle
+        if (window.Network && window.Network.isAuthenticated()) {
+            const updated = await window.Network.saveLoadout(this.campaignProgress?.cardBag || [], {
+                gold: newGold,
+                currentHealth: newHealth
+            });
+            if (updated) {
+                this.campaignProgress = updated;
+            }
+        }
+
+        // UI güncelle
+        const currentHealthEl = document.getElementById('campfire-current-health');
+        const goldEl = document.getElementById('campfire-gold');
+
+        if (currentHealthEl) {
+            currentHealthEl.textContent = newHealth;
+        }
+
+        if (goldEl) {
+            goldEl.textContent = newGold;
+        }
+
+        this.updateCampaignHUD();
+
+        if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+            UI.showInfoMessage(`${healAmount} can yenilendi! -${cost} Altın`, 2000);
+        }
+    }
+
+    async completeCampfireNode() {
+        const nodeId = this.currentCampaignNode?.id;
+        if (nodeId !== undefined) {
+            const completedNodes = [...(this.campaignProgress?.completedNodes || []), nodeId];
+            const nextNode = window.campaignData?.getNextNode(nodeId);
+            const nextNodeId = nextNode ? nextNode.id : nodeId;
+
+            if (window.Network && window.Network.isAuthenticated()) {
+                const updated = await window.Network.saveLoadout(this.campaignProgress?.cardBag || [], {
+                    completedNodes,
+                    currentNode: nextNodeId
+                });
+                if (updated) {
+                    this.campaignProgress = updated;
+                }
+            }
+        }
+
+        this.showCampaignHub();
+    }
+
+    showMarketScreen() {
+        if (typeof UI !== 'undefined' && UI.showScreen) {
+            UI.showScreen('campaign-market-screen');
+        }
+
+        const marketList = document.getElementById('market-card-list');
+        if (!marketList) return;
+
+        // İskelet: Rastgele 5 kart göster
+        const allCards = window.cardsData || [];
+        const marketCards = allCards.slice(0, 5);
+
+        marketList.innerHTML = `
+            <div class="market-cards-container">
+                ${marketCards.map(card => `
+                    <div class="market-card">
+                        <h3>${card.name}</h3>
+                        <p>Fiyat: 50 Altın</p>
+                        <button class="campaign-action-btn buy-card-btn" data-card-id="${card.id}">Satın Al</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // Satın alma butonları (iskelet)
+        marketList.querySelectorAll('.buy-card-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                    UI.showInfoMessage('Market özelliği yakında eklenecek.', 2000);
+                }
+            });
+        });
+
+        // Geri butonu
+        const backBtn = document.getElementById('market-back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.completeMarketNode();
+            });
+        }
+    }
+
+    async completeMarketNode() {
+        const nodeId = this.currentCampaignNode?.id;
+        if (nodeId !== undefined) {
+            const completedNodes = [...(this.campaignProgress?.completedNodes || []), nodeId];
+            const nextNode = window.campaignData?.getNextNode(nodeId);
+            const nextNodeId = nextNode ? nextNode.id : nodeId;
+
+            if (window.Network && window.Network.isAuthenticated()) {
+                const updated = await window.Network.saveLoadout(this.campaignProgress?.cardBag || [], {
+                    completedNodes,
+                    currentNode: nextNodeId
+                });
+                if (updated) {
+                    this.campaignProgress = updated;
+                }
+            }
+        }
+
+        this.showCampaignHub();
+    }
+
+    showWorkshopScreen() {
+        if (typeof UI !== 'undefined' && UI.showScreen) {
+            UI.showScreen('campaign-workshop-screen');
+        }
+
+        const workshopList = document.getElementById('workshop-card-list');
+        if (!workshopList) return;
+
+        // Çantadaki kartları göster
+        const cardBag = this.campaignProgress?.cardBag || [];
+
+        workshopList.innerHTML = cardBag.length ? `
+            <div class="workshop-cards-container">
+                ${cardBag.map(card => {
+                    const cardData = window.cardsData?.find(c => c.id === card.baseId);
+                    return `
+                        <div class="workshop-card">
+                            <h3>${cardData?.name || 'Kart ' + card.baseId}</h3>
+                            <p>Level: ${card.defaultLevel || 1}</p>
+                            <button class="campaign-action-btn upgrade-card-btn" data-card-id="${card.baseId}">Yükselt (30 Altın)</button>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        ` : '<p>Çantanızda kart yok.</p>';
+
+        // Yükseltme butonları (iskelet)
+        workshopList.querySelectorAll('.upgrade-card-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (typeof UI !== 'undefined' && UI.showInfoMessage) {
+                    UI.showInfoMessage('Atölye özelliği yakında eklenecek.', 2000);
+                }
+            });
+        });
+
+        // Geri butonu
+        const backBtn = document.getElementById('workshop-back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.completeWorkshopNode();
+            });
+        }
+    }
+
+    async completeWorkshopNode() {
+        const nodeId = this.currentCampaignNode?.id;
+        if (nodeId !== undefined) {
+            const completedNodes = [...(this.campaignProgress?.completedNodes || []), nodeId];
+            const nextNode = window.campaignData?.getNextNode(nodeId);
+            const nextNodeId = nextNode ? nextNode.id : nodeId;
+
+            if (window.Network && window.Network.isAuthenticated()) {
+                const updated = await window.Network.saveLoadout(this.campaignProgress?.cardBag || [], {
+                    completedNodes,
+                    currentNode: nextNodeId
+                });
+                if (updated) {
+                    this.campaignProgress = updated;
+                }
+            }
+        }
+
+        this.showCampaignHub();
     }
 
     askForNewGame() {

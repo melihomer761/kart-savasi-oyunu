@@ -88,6 +88,9 @@
             <button id="pvc-mode-btn">Oyuncu VS Bilgisayar</button>
             <button id="online-pvp-btn">Çevrimiçi PvP (Online)</button>
         </div>
+        <div class="game-mode-buttons" style="margin-top: 30px;">
+            <button id="reset-campaign-btn" style="background-color: #ff4444; color: white;">Seferi Baştan Başla</button>
+        </div>
     </div>
 
     <!-- PvC Alt Mod Seçim Ekranı -->
@@ -151,6 +154,13 @@
     <!-- Kampanya Merkezi -->
     <div class="game-mode-screen" id="campaign-hub-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
         <h2>Sefer Merkezi</h2>
+        
+        <!-- HUD - Can ve Altın -->
+        <div class="campaign-hud">
+            <div class="hud-health">❤️ <span id="hud-health">300</span>/300</div>
+            <div class="hud-gold">💰 <span id="hud-gold">0</span></div>
+        </div>
+        
         <div class="selection-container" style="max-width: 700px; width: 90%;">
             <div id="campaign-mission-list"></div>
             <div class="campaign-summary"><strong>Çanta:</strong> <span id="campaign-bag-count">0</span> kart</div>
@@ -173,6 +183,47 @@
         <div class="selection-container" style="max-width: 700px; width: 90%;">
             <div id="campaign-reward-list"></div>
             <button id="campaign-reward-back-btn" class="campaign-action-btn campaign-action-btn--secondary">Merkeze Dön</button>
+        </div>
+    </div>
+
+    <div class="game-mode-screen" id="campaign-campfire-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>🔥 Kamp Ateşi</h2>
+        <div class="selection-container" style="max-width: 500px; width: 90%;">
+            <p style="margin-bottom: 20px;">Dinlen ve canını yenile.</p>
+            <div class="campfire-stats">
+                <div class="campfire-stat">
+                    <span>Mevcut Can:</span>
+                    <strong id="campfire-current-health">300</strong>
+                </div>
+                <div class="campfire-stat">
+                    <span>Altın:</span>
+                    <strong id="campfire-gold">0</strong>
+                </div>
+            </div>
+            <div class="campfire-actions">
+                <button id="heal-50-btn" class="campaign-action-btn">50 Can Yenile (10 Altın)</button>
+                <button id="heal-100-btn" class="campaign-action-btn">100 Can Yenile (20 Altın)</button>
+                <button id="heal-full-btn" class="campaign-action-btn">Tam Can Yenile (50 Altın)</button>
+            </div>
+            <button id="campfire-back-btn" class="campaign-action-btn campaign-action-btn--secondary" style="margin-top: 20px;">Merkeze Dön</button>
+        </div>
+    </div>
+
+    <div class="game-mode-screen" id="campaign-market-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>🏪 Market</h2>
+        <div class="selection-container" style="max-width: 700px; width: 90%;">
+            <p style="margin-bottom: 20px;">Altın karşılığı kart satın al.</p>
+            <div id="market-card-list"></div>
+            <button id="market-back-btn" class="campaign-action-btn campaign-action-btn--secondary" style="margin-top: 20px;">Merkeze Dön</button>
+        </div>
+    </div>
+
+    <div class="game-mode-screen" id="campaign-workshop-screen" style="display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <h2>🔨 Atölye</h2>
+        <div class="selection-container" style="max-width: 700px; width: 90%;">
+            <p style="margin-bottom: 20px;">Altın karşılığı kartlarını güçlendir.</p>
+            <div id="workshop-card-list"></div>
+            <button id="workshop-back-btn" class="campaign-action-btn campaign-action-btn--secondary" style="margin-top: 20px;">Merkeze Dön</button>
         </div>
     </div>
 
@@ -325,6 +376,7 @@
     <!-- Scriptlerimizi hiyerarşik sırayla alt kısımda tek seferlik çağırıyoruz -->
     <script src="ui.js?v=2"></script>
     <script src="cards.js"></script>
+    <script src="campaign.js"></script>
     <script src="network.js"></script>
     <script src="gameState.js"></script>
     <script src="gameLogic.js"></script>

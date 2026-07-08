@@ -4,6 +4,8 @@
 
 const UI = {
     showScreen: (screenId) => {
+        console.log('showScreen çağrıldı, screenId:', screenId);
+        
         // Tüm ekranları gizle
         const screens = document.querySelectorAll('.game-mode-screen, .card-selection-screen, .game-container');
         screens.forEach(screen => {
@@ -14,8 +16,12 @@ const UI = {
         
         // İstenen ekranı göster
         const targetScreen = document.getElementById(screenId);
+        console.log('targetScreen:', targetScreen);
         if (targetScreen) {
             targetScreen.style.display = screenId === 'card-selection' ? 'flex' : 'flex';
+            console.log('Ekran gösterildi:', screenId);
+        } else {
+            console.error('Ekran bulunamadı:', screenId);
         }
     },
     
@@ -786,7 +792,13 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             if (window.gameState) {
-                window.gameState.confirmAiConfig(aiConfig);
+                // AI config'i kaydet ama kart seçimi ekranına geç
+                window.gameState.aiConfig = aiConfig;
+                if (typeof UI !== 'undefined' && UI.showScreen) {
+                    UI.showScreen('card-selection');
+                }
+                window.gameState.showCardSelection();
+                window.gameState.updatePlayerIndicator();
             }
         });
     }
@@ -834,7 +846,10 @@ document.addEventListener('DOMContentLoaded', function() {
         quickPvcBtn.addEventListener('click', () => {
             if (window.gameState) {
                 window.gameState.campaignMode = false;
-                window.gameState.setGameMode('pvc');
+                window.gameState.gameMode = 'pvc';
+                if (typeof UI !== 'undefined' && UI.showAiConfigScreen) {
+                    UI.showAiConfigScreen();
+                }
             }
         });
     }
@@ -885,6 +900,17 @@ document.addEventListener('DOMContentLoaded', function() {
         campaignRewardBackBtn.addEventListener('click', () => {
             if (window.gameState) {
                 window.gameState.showCampaignHub();
+            }
+        });
+    }
+
+    const resetCampaignBtn = document.getElementById('reset-campaign-btn');
+    if (resetCampaignBtn) {
+        resetCampaignBtn.addEventListener('click', () => {
+            if (confirm('Sefer ilerlemeniz tamamen silinecek, emin misiniz?')) {
+                if (window.gameState) {
+                    window.gameState.resetCampaign();
+                }
             }
         });
     }

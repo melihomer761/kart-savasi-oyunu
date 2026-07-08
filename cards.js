@@ -1,5 +1,28 @@
 const cardsData = [
     {
+        id: 0,
+        name: "Gardiyan",
+        health: 10,
+        attack: 10,
+        speed: 5,
+        armor: 0,
+        description: "Basit bir gardiyan kartı. Özelliği yok.",
+        levelStats: {
+            health: [10, 10, 10, 10, 10],
+            attack: [10, 10, 10, 10, 10],
+            speed: [5, 5, 5, 5, 5],
+            armor: [0, 0, 0, 0, 0]
+        },
+        levelAbilities: {},
+        levelDescriptions: [
+            "Basit bir gardiyan kartı. Özelliği yok.",
+            "Basit bir gardiyan kartı. Özelliği yok.",
+            "Basit bir gardiyan kartı. Özelliği yok.",
+            "Basit bir gardiyan kartı. Özelliği yok.",
+            "Basit bir gardiyan kartı. Özelliği yok."
+        ]
+    },
+    {
         id: 1,
         name: "Ateş Savaşçısı",
         health: 137,
@@ -734,3 +757,9 @@ const aiPreMadeDecks = [
         cardIds: [8, 15, 13, 10]
     }
 ];
+
+// Global olarak expose et
+if (typeof window !== 'undefined') {
+    window.cardsData = cardsData;
+    window.aiPreMadeDecks = aiPreMadeDecks;
+}

@@ -130,8 +130,16 @@ app.post('/api/campaign/complete', authenticateToken, (req, res) => {
 });
 
 app.put('/api/campaign/loadout', authenticateToken, (req, res) => {
-    const { cardBag } = req.body;
-    const updated = db.updateCampaignProgress(req.user.id, { cardBag });
+    const { cardBag, currentNode, gold, currentHealth, completedNodes } = req.body;
+    const updates = {};
+    
+    if (cardBag !== undefined) updates.cardBag = cardBag;
+    if (currentNode !== undefined) updates.currentNode = currentNode;
+    if (gold !== undefined) updates.gold = gold;
+    if (currentHealth !== undefined) updates.currentHealth = currentHealth;
+    if (completedNodes !== undefined) updates.completedNodes = completedNodes;
+    
+    const updated = db.updateCampaignProgress(req.user.id, updates);
     res.json({ progress: updated });
 });
 
