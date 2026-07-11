@@ -90,6 +90,11 @@ app.post('/api/login', async (req, res) => {
         return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
     }
 
+    if (!user.passwordHash) {
+       console.log('passwordHash eksik, user:', user);
+        return res.status(500).json({ error: 'Kullanıcı verisi hatalı - passwordHash eksik' });
+    }
+
     const passwordMatches = await bcrypt.compare(password, user.passwordHash);
     if (!passwordMatches) {
         return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
