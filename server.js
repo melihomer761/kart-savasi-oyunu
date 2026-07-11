@@ -262,6 +262,11 @@ io.on('connection', (socket) => {
         if (result) {
             const { player, room } = result;
 
+            // Eğer maç zaten bitmişse, hükmen galibiyet verme
+            if (room.status === 'finished') {
+                return;
+            }
+
             if (room.status === 'ready' || room.status === 'playing') {
                 room.status = 'finished';
             }
