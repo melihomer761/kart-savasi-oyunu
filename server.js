@@ -80,28 +80,40 @@ app.post('/api/register', async (req, res) => {
 });
 
 app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Kullanıcı adı ve şifre gerekli' });
-    }
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Kullanıcı adı ve şifre gerekli' });
+        }
 
-    const user = await db.findPlayerByUsername(username);
-    if (!user) {
-        return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
-    }
+        const user = await db.findPlayerByUsername(username);
+        if (!user) {
+            return res.status(401).json({ error: 'Kullanıcı bulunamadı' });
+        }
 
-    if (!user.passwordHash) {
-       console.log('passwordHash eksik, user:', user);
-        return res.status(500).json({ error: 'Kullanıcı verisi hatalı - passwordHash eksik' });
-    }
+        // passwordhash (küçük harf) kontrolü
+        const hash = user.passwordhash || user.passwordHash;
 
-    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
-    if (!passwordMatches) {
-        return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
-    }
+        if (!hash) {
+            console.error(`Kritik Hata: ${username} kullanıcısının şifre verisi bozuk.`);
+            return res.status(422).json({
+                error: 'Hesap verisi migration sırasında bozulmuş. Lütfen bu kullanıcı adıyla tekrar Kayıt Olun.'
+            });
+        }
 
-    const token = createToken({ id: user.id, username: user.username });
-    return res.json({ token, profile: await db.getPlayerProfile(user.id) });
+        const passwordMatches = await bcrypt.compare(password, hash);
+        if (!passwordMatches) {
+            return res.status(401).json({ error: 'Geçersiz şifre' });
+        }
+
+        const token = createToken({ id: user.id, username: user.username });
+        const profile = await db.getPlayerProfile(user.id);
+
+        return res.json({ token, profile });
+    } catch (err) {
+        console.error('Login Error:', err);
+        res.status(500).json({ error: 'Sunucu hatası oluştu' });
+    }
 });
 
 app.get('/api/profile', authenticateToken, async (req, res) => {

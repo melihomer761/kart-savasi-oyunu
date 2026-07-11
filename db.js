@@ -133,10 +133,12 @@ async function updatePlayerStats(userId, outcome) {
   const player = await findPlayerById(userId);
   if (!player) return null;
 
-  const gamesPlayed = parseInt(player.gamesPlayed || 0) + 1;
-  const wins = outcome === 'win' ? parseInt(player.wins || 0) + 1 : parseInt(player.wins || 0);
-  const losses = outcome === 'loss' ? parseInt(player.losses || 0) + 1 : parseInt(player.losses || 0);
-  const rating = outcome === 'win' ? parseInt(player.rating || 1000) + 25 : Math.max(1, parseInt(player.rating || 1000) - 15);
+  // PostgreSQL'den gelen değerleri kesinlikle sayıya çeviriyoruz
+  const gamesPlayed = Number(player.gamesplayed || 0) + 1;
+  const wins = outcome === 'win' ? Number(player.wins || 0) + 1 : Number(player.wins || 0);
+  const losses = outcome === 'loss' ? Number(player.losses || 0) + 1 : Number(player.losses || 0);
+  const ratingChange = outcome === 'win' ? 25 : -15;
+  const rating = Math.max(1, Number(player.rating || 1000) + ratingChange);
 
   const client = await pool.connect();
   try {
@@ -193,15 +195,15 @@ async function getCampaignProgress(userId) {
   try {
     const result = await client.query('SELECT * FROM campaign_progress WHERE userId = $1', [userId]);
     if (result.rows[0]) {
-      const existing = result.rows[0];
+      const row = result.rows[0];
       return {
-        ...existing,
-        cardBag: JSON.parse(existing.cardbag || '[]'),
-        completedMissions: JSON.parse(existing.completedmissions || '[]'),
-        gold: existing.gold || 0,
-        currentHealth: existing.currenthealth || 300,
-        currentNode: existing.currentnode || 0,
-        completedNodes: JSON.parse(existing.completednodes || '[]')
+        userId: parseInt(row.userid),
+        cardBag: JSON.parse(row.cardbag || '[]'),
+        completedMissions: JSON.parse(row.completedmissions || '[]'),
+        gold: parseInt(row.gold || 0),
+        currentHealth: parseInt(row.currenthealth || 300),
+        currentNode: parseInt(row.currentnode || 0),
+        completedNodes: JSON.parse(row.completednodes || '[]')
       };
     }
     return null;
