@@ -925,6 +925,11 @@ class GameState {
                 socketId: Network.getSocketId(),
                 deck: deckData
             });
+            console.log('player1SelectedCards detay:', this.player1SelectedCards.map(c => ({
+                baseId: c.baseId,
+                level: c.level,
+                name: c.name
+            })));
             Network.sendPlayerReady(this.onlineRoomId, deckData);
         } else {
             alert('Sunucu bağlantısı yok! Lütfen lobiye dönüp tekrar deneyin.');
