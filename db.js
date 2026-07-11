@@ -128,10 +128,10 @@ async function updatePlayerStats(userId, outcome) {
   const player = await findPlayerById(userId);
   if (!player) return null;
 
-  const gamesPlayed = player.gamesPlayed + 1;
-  const wins = outcome === 'win' ? player.wins + 1 : player.wins;
-  const losses = outcome === 'loss' ? player.losses + 1 : player.losses;
-  const rating = outcome === 'win' ? player.rating + 25 : Math.max(1, player.rating - 15);
+  const gamesPlayed = parseInt(player.gamesPlayed || 0) + 1;
+  const wins = outcome === 'win' ? parseInt(player.wins || 0) + 1 : parseInt(player.wins || 0);
+  const losses = outcome === 'loss' ? parseInt(player.losses || 0) + 1 : parseInt(player.losses || 0);
+  const rating = outcome === 'win' ? parseInt(player.rating || 1000) + 25 : Math.max(1, parseInt(player.rating || 1000) - 15);
 
   const client = await pool.connect();
   try {
