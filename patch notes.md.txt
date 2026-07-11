@@ -1,0 +1,144 @@
+# ⚖️ Balance Changes v0.1.1
+
+Release Date: 11 July 2026
+
+---
+
+# 📊 Genel Denge Özeti
+
+## 🟢 Bufflanan Kartlar
+- Taş Kalkan
+- Şifacı
+- Kan Emici
+- Dikenli Deri
+
+## 🔴 Nerflenen Kartlar
+- Hayalet
+- Çevik Hançer
+- Savaş Borazanı
+- Öfke Ayini
+
+## 🟡 Düzenlenen Kartlar
+- Zehirli Ok
+- İkiz Okçu
+- Büyü Tazısı
+
+---
+
+# 🔥 Ateş Savaşçısı
+
+✅ Değişiklik Yok.
+
+---
+
+# ❄️ Buz Büyücüsü
+
+✅ Değişiklik Yok.
+
+---
+
+# 🛡️ Taş Kalkan
+
+🟢 **Saldırı**
+- Lv1-3: **15 → 19** *(+26.7%)*
+- Lv4-5: **21 → 27** *(+28.6%)*
+
+🟢 **Yükseltme Açıklaması**
+- Lv4-5 yükseltme bonusu **+6 Hasar → +8 Hasar**
+
+---
+
+# 🗡️ Çevik Hançer
+
+🔴 **Saldırı**
+- Lv3: **10 → 7** *(-30.0%)*
+- Lv4: **14 → 10** *(-28.6%)*
+- Lv5: **7 → 4** *(-42.9%)*
+
+🟡 **Yükseltme Açıklaması**
+- Lv3: **-3 Hasar → -6 Hasar**
+- Lv4: **+1 Hasar → +3 Hasar**
+
+---
+
+# 👻 Hayalet
+
+🔴 **Hız**
+- Tüm Seviyeler: **9 → 8** *(-11.1%)*
+
+🔴 **Kaçınma**
+- Lv1-2: **55% → 45%**
+- Lv3-4: **60% → 55%**
+- Lv5: **65% → 55%**
+
+🔴 **Zırh**
+- Lv4-5: **-2 → -4**
+
+🟡 **Yetenek Açıklaması**
+- Yeni kaçınma değerlerine göre güncellendi.
+
+---
+
+# ⚔️ Kara Şövalye
+
+🔴 **Tur Başı Saldırı Artışı**
+- Lv1-3: **5 → 4**
+- Lv4-5: **7 → 6**
+
+🟢 **Can**
+- Lv5: **185 → 210** *(+13.5%)*
+
+🟡 **Yetenek Açıklaması**
+- Güncellendi.
+
+---
+
+# ❤️ Şifacı
+
+🔴 **Can**
+- Lv1-3: **90 → 75** *(-16.7%)*
+- Lv4-5: **100 → 90** *(-10.0%)*
+
+🟢 **İyileştirme**
+- Lv1: **7 → 8**
+- Lv2-4: **10 → 12**
+- Lv5: **14 → 18**
+
+🟡 **Yetenek Açıklaması**
+- Güncellendi.
+
+---
+
+# ☠️ Zehirli Ok
+
+🟢 **Can**
+- Lv1-2: **75 → 175**
+- Lv3-5: **80 → 175**
+
+🔴 **Saldırı**
+- Lv1-2: **22 → 16**
+- Lv3-5: **25 → 16**
+
+🔴 **Hız**
+- Lv1-2: **7 → 6**
+- Lv3-5: **8 → 6**
+
+🟢 **Zırh**
+- **-2 → -1**
+
+🔴 **Zehir Hasarı**
+- Lv1: **10 → 9**
+- Lv2: **14 → 11**
+
+🟢 **Zehir Hasarı**
+- Lv5: **17 → 19**
+
+🔴 **Zırh Azaltma**
+- Lv1-2: **2 → 1**
+- Lv5: **3 → 2**
+
+🔴 **Zehir Süresi**
+- Lv1: **3 → 2 Tur**
+
+🟡 **Yetenek Açıklaması**
+- Yeni değerlerle güncellendi.

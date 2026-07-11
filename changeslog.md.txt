@@ -1,0 +1,21 @@
+# 📜 Changelog
+
+Bu dosya oyunun sürüm geçmişini özetler.
+
+---
+
+## v0.1.0
+- İlk oynanabilir sürüm oluşturuldu.
+
+## v0.1.1
+- İlk dengeleme güncellemesi yayınlandı.
+- 16 kart yapıldı.
+
+## v0.2.0
+- Bilgisayara karşı oynamak için algoritma yapıldı
+
+## v0.3.0
+- Online oyun modu getirildi
+
+## v0.3.1
+- 16 kart yeniden dengelendi.

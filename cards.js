@@ -8,10 +8,10 @@ const cardsData = [
         armor: 0,
         description: "Basit bir gardiyan kartı. Özelliği yok.",
         levelStats: {
-            health: [10, 10, 10, 10, 10],
-            attack: [10, 10, 10, 10, 10],
-            speed: [5, 5, 5, 5, 5],
-            armor: [0, 0, 0, 0, 0]
+            health: [10, 25, 40, 55, 70],
+            attack: [10, 15, 20, 25, 30],
+            speed: [5, 6, 7, 8, 9],
+            armor: [0, 1, 2, 3, 4]
         },
         levelAbilities: {},
         levelDescriptions: [
@@ -107,7 +107,7 @@ const cardsData = [
         description: "Peş peşe 3 kez hasar verir.",
         levelStats: {
             health: [70, 84, 84, 84, 84],
-            attack: [13, 13, 10, 14, 7],
+            attack: [13, 13, 7, 10, 4],
             speed: [10, 10, 10, 10, 10],
             armor: [0, 0, 0, 2, 2]
         },
@@ -117,8 +117,8 @@ const cardsData = [
         levelDescriptions: [
             "Peş peşe 3 kez hasar verir.",
             "Peş peşe 3 kez hasar verir. (+14 Can)",
-            "Peş peşe 4 kez hasar verir. (+14 Can, -3 Hasar)",
-            "Peş peşe 4 kez hasar verir. (+14 Can, +1 Hasar, +2 Zırh)",
+            "Peş peşe 4 kez hasar verir. (+14 Can, -6 Hasar)",
+            "Peş peşe 4 kez hasar verir. (+14 Can, +3 Hasar, +2 Zırh)",
             "Peş peşe 5 kez hasar verir. (+14 Can, -6 Hasar, +2 Zırh)"
         ]
     },
@@ -133,19 +133,19 @@ const cardsData = [
         levelStats: {
             health: [48, 60, 60, 60, 60],
             attack: [35, 35, 35, 43, 43],
-            speed: [9, 9, 9, 9, 9],
-            armor: [-4, -4, -4, -2, -2]
+            speed: [8, 8, 8, 8, 8],
+            armor: [-4, -4, -4, -4, -4]
         },
         levelAbilities: {
-            dodgeChance: [55, 55, 60, 60, 65],
+            dodgeChance: [45, 45, 55, 55, 55],
             dodgeCount: [3, 3, 4, 4, 6]
         },
         levelDescriptions: [
-            "İlk 3 saldırıda %55 kaçınma şansına sahiptir.",
-            "İlk 3 saldırıda %55 kaçınma şansına sahiptir. (+12 Can)",
-            "İlk 4 saldırıda %60 kaçınma şansına sahiptir. (+12 Can)",
-            "İlk 4 saldırıda %60 kaçınma şansına sahiptir. (+12 Can, +8 Hasar, +2 Zırh)",
-            "İlk 6 saldırıda %65 kaçınma şansına sahiptir. (+12 Can, +8 Hasar, +2 Zırh)"
+            "İlk 3 saldırıda %45 kaçınma şansına sahiptir.",
+            "İlk 3 saldırıda %45 kaçınma şansına sahiptir. (+12 Can)",
+            "İlk 4 saldırıda %55 kaçınma şansına sahiptir. (+12 Can)",
+            "İlk 4 saldırıda %55 kaçınma şansına sahiptir. (+12 Can, +8 Hasar,)",
+            "İlk 6 saldırıda %55 kaçınma şansına sahiptir. (+12 Can, +8 Hasar,)"
         ]
     },
     {
@@ -157,20 +157,20 @@ const cardsData = [
         armor: -8,
         description: "Her tur başında saldırı gücü 5 artar.",
         levelStats: {
-            health: [185, 185, 185, 185, 185],
+            health: [185, 185, 185, 185, 210],
             attack: [20, 23, 23, 23, 23],
             speed: [5, 5, 5, 5, 5],
             armor: [-8, -8, -4, -4, 1]
         },
         levelAbilities: {
-            attackGrowth: [5, 5, 5, 7, 7]
+            attackGrowth: [4, 4, 4, 6, 6]
         },
         levelDescriptions: [
-            "Her tur başında saldırı gücü 5 artar.",
-            "Her tur başında saldırı gücü 5 artar. (+3 Hasar)",
-            "Her tur başında saldırı gücü 5 artar. (+3 Hasar, +4 Zırh)",
-            "Her tur başında saldırı gücü 7 artar. (+3 Hasar, +4 Zırh)",
-            "Her tur başında saldırı gücü 7 artar. (+3 Hasar, +9 Zırh)"
+            "Her tur başında saldırı gücü 4 artar.",
+            "Her tur başında saldırı gücü 4 artar. (+3 Hasar)",
+            "Her tur başında saldırı gücü 4 artar. (+3 Hasar, +4 Zırh)",
+            "Her tur başında saldırı gücü 6 artar. (+3 Hasar, +4 Zırh)",
+            "Her tur başında saldırı gücü 6 artar. (+3 Hasar, +4 Zırh, +25 can)"
         ]
     },
     {
@@ -182,20 +182,20 @@ const cardsData = [
         armor: 2,
         description: "Her turda tüm dost kartlara +7 can verir. Maksimum canı aşabilir.",
         levelStats: {
-            health: [90, 90, 90, 100, 100],
+            health: [75, 75, 75, 90, 90],
             attack: [10, 10, 14, 14, 14],
             speed: [6, 6, 6, 6, 6],
             armor: [2, 2, 2, 2, 2]
         },
         levelAbilities: {
-            healAmount: [7, 10, 10, 10, 14]
+            healAmount: [8, 12, 12, 12, 18]
         },
         levelDescriptions: [
-            "Her turda tüm dost kartlara +7 can verir. Maksimum canı aşabilir.",
-            "Her turda tüm dost kartlara +10 can verir. Maksimum canı aşabilir.",
-            "Her turda tüm dost kartlara +10 can verir. Maksimum canı aşabilir. (+4 Hasar)",
-            "Her turda tüm dost kartlara +10 can verir. Maksimum canı aşabilir. (+4 Hasar, +10 Can)",
-            "Her turda tüm dost kartlara +14 can verir. Maksimum canı aşabilir. (+4 Hasar, +10 Can)"
+            "Her turda tüm dost kartlara +8 can verir. Maksimum canı aşabilir.",
+            "Her turda tüm dost kartlara +12 can verir. Maksimum canı aşabilir.",
+            "Her turda tüm dost kartlara +12 can verir. Maksimum canı aşabilir. (+4 Hasar)",
+            "Her turda tüm dost kartlara +12 can verir. Maksimum canı aşabilir. (+4 Hasar, +10 Can)",
+            "Her turda tüm dost kartlara +18 can verir. Maksimum canı aşabilir. (+4 Hasar, +10 Can)"
         ]
     },
     {
@@ -207,22 +207,22 @@ const cardsData = [
         armor: -2,
         description: "Zehirlediği rakip 3 tur boyunca her tur 10 hasar (zırhı yok sayar) alır ve zırhı 2 azalır.",
         levelStats: {
-            health: [75, 75, 80, 80, 80],
-            attack: [22, 22, 25, 25, 25],
-            speed: [7, 7, 8, 8, 8],
+            health: [175, 175, 175, 175, 175],
+            attack: [16, 16, 16, 16, 16],
+            speed: [6, 6, 6, 6, 6],
             armor: [-2, -2, -2, -2, -2]
         },
         levelAbilities: {
-            poisonDamage: [10, 14, 14, 14, 17],
-            poisonArmorReduction: [2, 2, 2, 2, 3],
-            poisonDuration: [3, 3, 3, 5, 5]
+            poisonDamage: [9, 11, 14, 14, 19],
+            poisonArmorReduction: [1, 1, 2, 2, 2],
+            poisonDuration: [2, 3, 3, 5, 5]
         },
         levelDescriptions: [
-            "Zehirlediği rakip 3 tur boyunca her tur 10 hasar alır ve zırhı 2 azalır.",
-            "Zehirlediği rakip 3 tur boyunca her tur 14 hasar alır ve zırhı 2 azalır.",
-            "Zehirlediği rakip 3 tur boyunca her tur 14 hasar alır ve zırhı 2 azalır. (+5 Can, +3 Hasar, +1 Hız)",
-            "Zehirlediği rakip 5 tur boyunca her tur 14 hasar alır ve zırhı 2 azalır. (+5 Can, +3 Hasar, +1 Hız)",
-            "Zehirlediği rakip 5 tur boyunca her tur 17 hasar alır ve zırhı 3 azalır. (+5 Can, +3 Hasar, +1 Hız)"
+            "Zehirlediği rakip 2 tur boyunca her tur 9 hasar alır ve zırhı 1 azalır.",
+            "Zehirlediği rakip 3 tur boyunca her tur 11 hasar alır ve zırhı 1 azalır.",
+            "Zehirlediği rakip 3 tur boyunca her tur 14 hasar alır ve zırhı 2 azalır. ",
+            "Zehirlediği rakip 5 tur boyunca her tur 14 hasar alır ve zırhı 2 azalır.",
+            "Zehirlediği rakip 5 tur boyunca her tur 19 hasar alır ve zırhı 2 azalır."
         ]
     },
     {
@@ -234,21 +234,21 @@ const cardsData = [
         armor: 1,
         description: "Yaşadığı sürece dost kartların saldırı gücü +3, hızı +1 artar.",
         levelStats: {
-            health: [130, 130, 130, 151, 151],
+            health: [100, 100, 100, 100, 123],
             attack: [12, 17, 17, 17, 17],
             speed: [1, 1, 1, 1, 1],
             armor: [1, 1, 1, 1, 1]
         },
         levelAbilities: {
-            attackBonus: [3, 3, 5, 5, 7],
-            speedBonus: [1, 1, 2, 2, 4]
+            attackBonus: [2, 2, 3, 3, 6],
+            speedBonus: [1, 1, 1, 2, 2]
         },
         levelDescriptions: [
-            "Yaşadığı sürece dost kartların saldırı gücü +3, hızı +1 artar.",
+            "Yaşadığı sürece dost kartların saldırı gücü +2, hızı +1 artar.",
+            "Yaşadığı sürece dost kartların saldırı gücü +2, hızı +1 artar. (+5 Hasar)",
             "Yaşadığı sürece dost kartların saldırı gücü +3, hızı +1 artar. (+5 Hasar)",
-            "Yaşadığı sürece dost kartların saldırı gücü +5, hızı +2 artar. (+5 Hasar)",
-            "Yaşadığı sürece dost kartların saldırı gücü +5, hızı +2 artar. (+5 Hasar, +21 Can)",
-            "Yaşadığı sürece dost kartların saldırı gücü +7, hızı +4 artar. (+5 Hasar, +21 Can)"
+            "Yaşadığı sürece dost kartların saldırı gücü +3, hızı +2 artar. (+5 Hasar)",
+            "Yaşadığı sürece dost kartların saldırı gücü +6, hızı +2 artar. (+5 Hasar, +23 Can)"
         ]
     },
     {
@@ -266,13 +266,13 @@ const cardsData = [
             armor: [-1, -1, -1, -1, -1]
         },
         levelAbilities: {
-            healPercentage: [60, 60, 60, 60, 65]
+            healPercentage: [55, 55, 55, 55, 65]
         },
         levelDescriptions: [
-            "İki kez vurur ve verdiği hasarın %60'ı kadar kendi canını iyileştirir.",
-            "İki kez vurur ve verdiği hasarın %60'ı kadar kendi canını iyileştirir. (+2 Hasar)",
-            "İki kez vurur ve verdiği hasarın %60'ı kadar kendi canını iyileştirir. (+2 Hasar, +2 Hız)",
-            "İki kez vurur ve verdiği hasarın %60'ı kadar kendi canını iyileştirir. (+4 Hasar, +2 Hız)",
+            "İki kez vurur ve verdiği hasarın %55'ı kadar kendi canını iyileştirir.",
+            "İki kez vurur ve verdiği hasarın %55'ı kadar kendi canını iyileştirir. (+2 Hasar)",
+            "İki kez vurur ve verdiği hasarın %55'ı kadar kendi canını iyileştirir. (+2 Hasar, +2 Hız)",
+            "İki kez vurur ve verdiği hasarın %55'ı kadar kendi canını iyileştirir. (+5 Hasar, +2 Hız)",
             "İki kez vurur ve verdiği hasarın %65'i kadar kendi canını iyileştirir. (+4 Hasar, +2 Hız)"
         ]
     },
@@ -286,19 +286,19 @@ const cardsData = [
         description: "Her saldırıda %60 şansla iki hedefi vurur. İkinci hedef rastgele seçilir.",
         levelStats: {
             health: [70, 90, 90, 90, 90],
-            attack: [20, 20, 25, 25, 25],
-            speed: [5, 5, 6, 6, 6],
+            attack: [21, 21, 26, 26, 26],
+            speed: [5, 5, 5, 5, 5],
             armor: [3, 3, 3, 5, 5]
         },
         levelAbilities: {
             doubleTargetChance: [60, 60, 60, 60, 100]
         },
         levelDescriptions: [
-            "Her saldırıda %60 şansla iki hedefi vurur. İkinci hedef rastgele seçilir.",
-            "Her saldırıda %60 şansla iki hedefi vurur. İkinci hedef rastgele seçilir. (+20 Can)",
-            "Her saldırıda %60 şansla iki hedefi vurur. İkinci hedef rastgele seçilir. (+20 Can, +5 Hasar, +1 Hız)",
-            "Her saldırıda %60 şansla iki hedefi vurur. İkinci hedef rastgele seçilir. (+20 Can, +5 Hasar, +1 Hız, +2 Zırh)",
-            "Her saldırıda ikinci hedefi kesinlikle vurur. (+20 Can, +5 Hasar, +1 Hız, +2 Zırh)"
+            "Her saldırıda %60 şansla rastgele ikinci hedef vurur.",
+            "Her saldırıda %60 şansla rastgele ikinci hedef vurur. (+20 Can)",
+            "Her saldırıda %60 şansla rastgele ikinci hedef vurur. (+20 Can, +5 Hasar,)",
+            "Her saldırıda %60 şansla rastgele ikinci hedef vurur. (+20 Can, +5 Hasar, +2 Zırh)",
+            "Her saldırıda iki hedef vurur. (+20 Can, +5 Hasar, +1 Hız, +2 Zırh)"
         ]
     },
     {
@@ -357,22 +357,22 @@ const cardsData = [
         armor: 0,
         description: "Savaş başında tüm dost kartların hızını 3, zırhını 2 azaltır; ancak saldırı güçlerini 6 arttırır.",
         levelStats: {
-            health: [70, 70, 70, 70, 70],
+            health: [65, 65, 65, 65, 65],
             attack: [19, 25, 25, 25, 25],
             speed: [4, 4, 4, 4, 4],
             armor: [0, 0, 0, 0, 0]
         },
         levelAbilities: {
-            speedDebuff: [3, 3, 3, 2, 4],
-            armorDebuff: [2, 2, 4, 3, 5],
-            attackBuff: [6, 6, 10, 10, 17]
+            speedDebuff: [2, 2, 4, 3, 5],
+            armorDebuff: [4, 4, 6, 4, 6],
+            attackBuff: [6, 6, 9, 9, 15]
         },
         levelDescriptions: [
-            "Savaş başında tüm dost kartların hızını 3, zırhını 2 azaltır; ancak saldırı güçlerini 6 arttırır.",
-            "Savaş başında tüm dost kartların hızını 3, zırhını 2 azaltır; ancak saldırı güçlerini 6 arttırır. (+6 Hasar)",
-            "Savaş başında tüm dost kartların hızını 3, zırhını 4 azaltır; ancak saldırı güçlerini 10 arttırır. (+6 Hasar)",
-            "Savaş başında tüm dost kartların hızını 2, zırhını 3 azaltır; ancak saldırı güçlerini 10 arttırır. (+6 Hasar)",
-            "Savaş başında tüm dost kartların hızını 4, zırhını 5 azaltır; ancak saldırı güçlerini 17 arttırır. (+6 Hasar)"
+            "Savaş başında tüm dost kartların hızını 2, zırhını 4 azaltır; ancak saldırı güçlerini 6 arttırır.",
+            "Savaş başında tüm dost kartların hızını 2, zırhını 4 azaltır; ancak saldırı güçlerini 6 arttırır. (+6 Hasar)",
+            "Savaş başında tüm dost kartların hızını 4, zırhını 6 azaltır; ancak saldırı güçlerini 9 arttırır. (+6 Hasar)",
+            "Savaş başında tüm dost kartların hızını 3, zırhını 4 azaltır; ancak saldırı güçlerini 9 arttırır. (+6 Hasar)",
+            "Savaş başında tüm dost kartların hızını 5, zırhını 6 azaltır; ancak saldırı güçlerini 15 arttırır. (+6 Hasar)"
         ]
     },
     {
@@ -384,7 +384,7 @@ const cardsData = [
         armor: -10,
         description: "Saldırana alınan hasarın %30'unu yansıtır.",
         levelStats: {
-            health: [200, 230, 230, 230, 265],
+            health: [210, 240, 240, 240, 275],
             attack: [9, 9, 9, 16, 16],
             speed: [6, 6, 6, 6, 6],
             armor: [-10, -10, -10, -5, -5]
