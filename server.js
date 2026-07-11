@@ -100,8 +100,10 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.get('/api/profile', authenticateToken, async (req, res) => {
+    console.log('/api/profile çağrıldı, req.user:', req.user);
     const profile = await db.getPlayerProfile(req.user.id);
     if (!profile) {
+        console.log('Profil bulunamadı, 404 döndürülüyor');
         return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
     }
 

@@ -110,12 +110,17 @@ async function findPlayerByUsername(username) {
 }
 
 async function getPlayerProfile(id) {
+  console.log('getPlayerProfile çağrıldı, id:', id, 'type:', typeof id);
   const client = await pool.connect();
   try {
     const result = await client.query(
       'SELECT id, username, gamesPlayed, wins, losses, rating, createdAt FROM players WHERE id = $1',
       [id]
     );
+    console.log('getPlayerProfile sorgu sonucu:', result.rows.length, 'satır bulundu');
+    if (result.rows.length > 0) {
+      console.log('Kullanıcı bulundu:', result.rows[0]);
+    }
     return result.rows[0] || null;
   } finally {
     client.release();
