@@ -914,6 +914,19 @@ class GameState {
         
         // Desteyi sunucuya gönder
         if (window.Network && Network.isConnected()) {
+            console.log('player1SelectedCards:', this.player1SelectedCards);
+            console.log('player1SelectedCards length:', this.player1SelectedCards?.length);
+
+            if (!this.player1SelectedCards || this.player1SelectedCards.length === 0) {
+                console.error('player1SelectedCards boş veya undefined!');
+                alert('Kart seçimi yapılmadı! Lütfen 4 kart seçin.');
+                if (readyButton) {
+                    readyButton.disabled = false;
+                    readyButton.textContent = 'Hazır';
+                }
+                return;
+            }
+
             const deckData = this.player1SelectedCards.map(card => ({
                 baseId: card.baseId,
                 level: card.level
