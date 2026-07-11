@@ -703,7 +703,7 @@ class GameState {
             }
             
             // Süre sayacını başlat
-            this.startSelectionTimer(60);
+            this.startSelectionTimer(90);
         }
         
         cardSelection.style.display = 'flex';
@@ -914,11 +914,7 @@ class GameState {
         
         // Desteyi sunucuya gönder
         if (window.Network && Network.isConnected()) {
-            console.log('player1SelectedCards:', this.player1SelectedCards);
-            console.log('player1SelectedCards length:', this.player1SelectedCards?.length);
-
             if (!this.player1SelectedCards || this.player1SelectedCards.length === 0) {
-                console.error('player1SelectedCards boş veya undefined!');
                 alert('Kart seçimi yapılmadı! Lütfen 4 kart seçin.');
                 if (readyButton) {
                     readyButton.disabled = false;
@@ -932,17 +928,6 @@ class GameState {
                 level: card.level
             }));
 
-            console.log('Hazır gönderiliyor:', {
-                roomId: this.onlineRoomId,
-                role: this.onlineRole,
-                socketId: Network.getSocketId(),
-                deck: deckData
-            });
-            console.log('player1SelectedCards detay:', this.player1SelectedCards.map(c => ({
-                baseId: c.baseId,
-                level: c.level,
-                name: c.name
-            })));
             Network.sendPlayerReady(this.onlineRoomId, deckData);
         } else {
             alert('Sunucu bağlantısı yok! Lütfen lobiye dönüp tekrar deneyin.');
