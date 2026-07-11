@@ -1,87 +1,131 @@
-const path = require('path');
-const Database = require('better-sqlite3');
+require('dotenv').config();
+const { Pool } = require('pg');
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'game.db');
-const db = new Database(dbPath);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-db.pragma('journal_mode = WAL');
+// Tabloları oluştur
+async function initTables() {
+  try {
+    const client = await pool.connect();
+    try {
+      // Players tablosu
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS players (
+          id SERIAL PRIMARY KEY,
+          username TEXT NOT NULL UNIQUE,
+          passwordHash TEXT NOT NULL,
+          createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          gamesPlayed INTEGER NOT NULL DEFAULT 0,
+          wins INTEGER NOT NULL DEFAULT 0,
+          losses INTEGER NOT NULL DEFAULT 0,
+          rating INTEGER NOT NULL DEFAULT 1000
+        )
+      `);
 
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS players (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE,
-    passwordHash TEXT NOT NULL,
-    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    gamesPlayed INTEGER NOT NULL DEFAULT 0,
-    wins INTEGER NOT NULL DEFAULT 0,
-    losses INTEGER NOT NULL DEFAULT 0,
-    rating INTEGER NOT NULL DEFAULT 1000
-  )
-`).run();
+      // Campaign progress tablosu
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS campaign_progress (
+          userId INTEGER PRIMARY KEY REFERENCES players(id),
+          cardBag TEXT NOT NULL DEFAULT '[]',
+          completedMissions TEXT NOT NULL DEFAULT '[]',
+          gold INTEGER NOT NULL DEFAULT 0,
+          currentHealth INTEGER NOT NULL DEFAULT 300,
+          currentNode INTEGER NOT NULL DEFAULT 0,
+          completedNodes TEXT NOT NULL DEFAULT '[]',
+          updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS campaign_progress (
-    userId INTEGER PRIMARY KEY REFERENCES players(id),
-    cardBag TEXT NOT NULL DEFAULT '[]',
-    completedMissions TEXT NOT NULL DEFAULT '[]',
-    gold INTEGER NOT NULL DEFAULT 0,
-    currentHealth INTEGER NOT NULL DEFAULT 300,
-    currentNode INTEGER NOT NULL DEFAULT 0,
-    completedNodes TEXT NOT NULL DEFAULT '[]',
-    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )
-`).run();
+      // Sütunları ekle (geriye dönük uyumluluk için)
+      try {
+        await client.query(`ALTER TABLE campaign_progress ADD COLUMN IF NOT EXISTS gold INTEGER DEFAULT 0`);
+      } catch (e) {
+        // Sütun zaten varsa hata yoksay
+      }
 
-// Mevcut tabloya yeni sütunları ekle (geriye dönük uyumluluk için)
-try {
-  db.prepare(`ALTER TABLE campaign_progress ADD COLUMN gold INTEGER DEFAULT 0`).run();
-} catch (e) {
-  // Sütun zaten varsa hata yoksay
+      try {
+        await client.query(`ALTER TABLE campaign_progress ADD COLUMN IF NOT EXISTS currentHealth INTEGER DEFAULT 300`);
+      } catch (e) {
+        // Sütun zaten varsa hata yoksay
+      }
+
+      try {
+        await client.query(`ALTER TABLE campaign_progress ADD COLUMN IF NOT EXISTS currentNode INTEGER DEFAULT 0`);
+      } catch (e) {
+        // Sütun zaten varsa hata yoksay
+      }
+
+      try {
+        await client.query(`ALTER TABLE campaign_progress ADD COLUMN IF NOT EXISTS completedNodes TEXT DEFAULT '[]'`);
+      } catch (e) {
+        // Sütun zaten varsa hata yoksay
+      }
+
+      console.log('BULUT VERİTABANINA BAĞLANDI! 🚀');
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Veritabanı bağlantı hatası:', error.message);
+    throw error;
+  }
 }
 
-try {
-  db.prepare(`ALTER TABLE campaign_progress ADD COLUMN currentHealth INTEGER DEFAULT 300`).run();
-} catch (e) {
-  // Sütun zaten varsa hata yoksay
+initTables();
+
+async function createPlayer(username, passwordHash) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'INSERT INTO players (username, passwordHash) VALUES ($1, $2) RETURNING id',
+      [username, passwordHash]
+    );
+    return findPlayerById(result.rows[0].id);
+  } finally {
+    client.release();
+  }
 }
 
-try {
-  db.prepare(`ALTER TABLE campaign_progress ADD COLUMN currentNode INTEGER DEFAULT 0`).run();
-} catch (e) {
-  // Sütun zaten varsa hata yoksay
+async function findPlayerById(id) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM players WHERE id = $1', [id]);
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
 }
 
-try {
-  db.prepare(`ALTER TABLE campaign_progress ADD COLUMN completedNodes TEXT DEFAULT '[]'`).run();
-} catch (e) {
-  // Sütun zaten varsa hata yoksay
+async function findPlayerByUsername(username) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM players WHERE username = $1', [username]);
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
 }
 
-function createPlayer(username, passwordHash) {
-  const stmt = db.prepare(`
-    INSERT INTO players (username, passwordHash)
-    VALUES (?, ?)
-  `);
-  const result = stmt.run(username, passwordHash);
-  return findPlayerById(result.lastInsertRowid);
+async function getPlayerProfile(id) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT id, username, gamesPlayed, wins, losses, rating, createdAt FROM players WHERE id = $1',
+      [id]
+    );
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
 }
 
-function findPlayerById(id) {
-  return db.prepare('SELECT * FROM players WHERE id = ?').get(id);
-}
-
-function findPlayerByUsername(username) {
-  return db.prepare('SELECT * FROM players WHERE username = ?').get(username);
-}
-
-function getPlayerProfile(id) {
-  return db.prepare('SELECT id, username, gamesPlayed, wins, losses, rating, createdAt FROM players WHERE id = ?').get(id);
-}
-
-function updatePlayerStats(userId, outcome) {
+async function updatePlayerStats(userId, outcome) {
   if (!userId) return null;
 
-  const player = findPlayerById(userId);
+  const player = await findPlayerById(userId);
   if (!player) return null;
 
   const gamesPlayed = player.gamesPlayed + 1;
@@ -89,66 +133,120 @@ function updatePlayerStats(userId, outcome) {
   const losses = outcome === 'loss' ? player.losses + 1 : player.losses;
   const rating = outcome === 'win' ? player.rating + 25 : Math.max(1, player.rating - 15);
 
-  db.prepare(`
-    UPDATE players
-    SET gamesPlayed = ?, wins = ?, losses = ?, rating = ?
-    WHERE id = ?
-  `).run(gamesPlayed, wins, losses, rating, userId);
-
-  return getPlayerProfile(userId);
-}
-
-function getCampaignProgress(userId) {
-  if (!userId) return null;
-  const existing = db.prepare('SELECT * FROM campaign_progress WHERE userId = ?').get(userId);
-  if (existing) {
-    return {
-      ...existing,
-      cardBag: JSON.parse(existing.cardBag || '[]'),
-      completedMissions: JSON.parse(existing.completedMissions || '[]'),
-      gold: existing.gold || 0,
-      currentHealth: existing.currentHealth || 300,
-      currentNode: existing.currentNode || 0,
-      completedNodes: JSON.parse(existing.completedNodes || '[]')
-    };
+  const client = await pool.connect();
+  try {
+    await client.query(
+      'UPDATE players SET gamesPlayed = $1, wins = $2, losses = $3, rating = $4 WHERE id = $5',
+      [gamesPlayed, wins, losses, rating, userId]
+    );
+    return getPlayerProfile(userId);
+  } finally {
+    client.release();
   }
-  return null;
 }
 
-function ensureCampaignProgress(userId, starterDeck = [1, 3, 5, 7]) {
+async function setPlayerRating(username, newRating) {
+  if (!username) return null;
+  
+  const player = await findPlayerByUsername(username);
+  if (!player) return null;
+  
+  const client = await pool.connect();
+  try {
+    await client.query('UPDATE players SET rating = $1 WHERE username = $2', [newRating, username]);
+    return getPlayerProfile(player.id);
+  } finally {
+    client.release();
+  }
+}
+
+async function getAllPlayers() {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT id, username, rating FROM players');
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+async function deletePlayerById(userId) {
+  if (!userId) return false;
+  const client = await pool.connect();
+  try {
+    await client.query('DELETE FROM campaign_progress WHERE userId = $1', [userId]);
+    await client.query('DELETE FROM players WHERE id = $1', [userId]);
+    return true;
+  } finally {
+    client.release();
+  }
+}
+
+async function getCampaignProgress(userId) {
   if (!userId) return null;
-  const existing = getCampaignProgress(userId);
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM campaign_progress WHERE userId = $1', [userId]);
+    if (result.rows[0]) {
+      const existing = result.rows[0];
+      return {
+        ...existing,
+        cardBag: JSON.parse(existing.cardbag || '[]'),
+        completedMissions: JSON.parse(existing.completedmissions || '[]'),
+        gold: existing.gold || 0,
+        currentHealth: existing.currenthealth || 300,
+        currentNode: existing.currentnode || 0,
+        completedNodes: JSON.parse(existing.completednodes || '[]')
+      };
+    }
+    return null;
+  } finally {
+    client.release();
+  }
+}
+
+async function ensureCampaignProgress(userId, starterDeck = [1, 3, 5, 7]) {
+  if (!userId) return null;
+  const existing = await getCampaignProgress(userId);
   console.log('ensureCampaignProgress - userId:', userId, 'existing:', existing);
   if (existing) {
     // Eğer cardBag boşsa, starterDeck yükle
     if (!existing.cardBag || existing.cardBag.length === 0) {
       console.log('CardBag boş, starterDeck yükleniyor');
       const newCardBag = starterDeck.map(baseId => ({ baseId, defaultLevel: 1 }));
-      db.prepare(`
-        UPDATE campaign_progress
-        SET cardBag = ?
-        WHERE userId = ?
-      `).run(JSON.stringify(newCardBag), userId);
-      const updated = getCampaignProgress(userId);
-      console.log('Güncellenmiş progress:', updated);
-      return updated;
+      const client = await pool.connect();
+      try {
+        await client.query(
+          'UPDATE campaign_progress SET cardbag = $1 WHERE userId = $2',
+          [JSON.stringify(newCardBag), userId]
+        );
+        const updated = await getCampaignProgress(userId);
+        console.log('Güncellenmiş progress:', updated);
+        return updated;
+      } finally {
+        client.release();
+      }
     }
     console.log('CardBag dolu, mevcut progress dönülüyor');
     return existing;
   }
 
   console.log('Yeni progress oluşturuluyor');
-  db.prepare(`
-    INSERT INTO campaign_progress (userId, cardBag, completedMissions)
-    VALUES (?, ?, ?)
-  `).run(userId, JSON.stringify(starterDeck.map(baseId => ({ baseId, defaultLevel: 1 }))), JSON.stringify([]));
-
-  return getCampaignProgress(userId);
+  const client = await pool.connect();
+  try {
+    await client.query(
+      'INSERT INTO campaign_progress (userId, cardbag, completedmissions) VALUES ($1, $2, $3)',
+      [userId, JSON.stringify(starterDeck.map(baseId => ({ baseId, defaultLevel: 1 }))), JSON.stringify([])]
+    );
+    return getCampaignProgress(userId);
+  } finally {
+    client.release();
+  }
 }
 
-function updateCampaignProgress(userId, updates) {
+async function updateCampaignProgress(userId, updates) {
   if (!userId) return null;
-  const current = ensureCampaignProgress(userId);
+  const current = await ensureCampaignProgress(userId);
   const next = {
     ...current,
     ...updates,
@@ -161,22 +259,27 @@ function updateCampaignProgress(userId, updates) {
     updatedAt: new Date().toISOString()
   };
 
-  db.prepare(`
-    UPDATE campaign_progress
-    SET cardBag = ?, completedMissions = ?, gold = ?, currentHealth = ?, currentNode = ?, completedNodes = ?, updatedAt = ?
-    WHERE userId = ?
-  `).run(
-    JSON.stringify(next.cardBag),
-    JSON.stringify(next.completedMissions),
-    next.gold,
-    next.currentHealth,
-    next.currentNode,
-    JSON.stringify(next.completedNodes),
-    next.updatedAt,
-    userId
-  );
-
-  return getCampaignProgress(userId);
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `UPDATE campaign_progress 
+       SET cardbag = $1, completedmissions = $2, gold = $3, currenthealth = $4, currentnode = $5, completednodes = $6, "updatedAt" = $7 
+       WHERE userId = $8`,
+      [
+        JSON.stringify(next.cardBag),
+        JSON.stringify(next.completedMissions),
+        next.gold,
+        next.currentHealth,
+        next.currentNode,
+        JSON.stringify(next.completedNodes),
+        next.updatedAt,
+        userId
+      ]
+    );
+    return getCampaignProgress(userId);
+  } finally {
+    client.release();
+  }
 }
 
 module.exports = {
@@ -185,6 +288,9 @@ module.exports = {
   findPlayerByUsername,
   getPlayerProfile,
   updatePlayerStats,
+  setPlayerRating,
+  getAllPlayers,
+  deletePlayerById,
   getCampaignProgress,
   ensureCampaignProgress,
   updateCampaignProgress

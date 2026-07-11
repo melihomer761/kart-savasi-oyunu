@@ -67,16 +67,16 @@ app.post('/api/register', async (req, res) => {
         return res.status(400).json({ error: 'Kullanıcı adı ve şifre gerekli' });
     }
 
-    const existing = db.findPlayerByUsername(username);
+    const existing = await db.findPlayerByUsername(username);
     if (existing) {
         return res.status(409).json({ error: 'Bu kullanıcı adı zaten kullanılıyor' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = db.createPlayer(username, passwordHash);
+    const user = await db.createPlayer(username, passwordHash);
     const token = createToken({ id: user.id, username: user.username });
 
-    return res.json({ token, profile: db.getPlayerProfile(user.id) });
+    return res.json({ token, profile: await db.getPlayerProfile(user.id) });
 });
 
 app.post('/api/login', async (req, res) => {
@@ -85,7 +85,7 @@ app.post('/api/login', async (req, res) => {
         return res.status(400).json({ error: 'Kullanıcı adı ve şifre gerekli' });
     }
 
-    const user = db.findPlayerByUsername(username);
+    const user = await db.findPlayerByUsername(username);
     if (!user) {
         return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre' });
     }
@@ -96,11 +96,11 @@ app.post('/api/login', async (req, res) => {
     }
 
     const token = createToken({ id: user.id, username: user.username });
-    return res.json({ token, profile: db.getPlayerProfile(user.id) });
+    return res.json({ token, profile: await db.getPlayerProfile(user.id) });
 });
 
-app.get('/api/profile', authenticateToken, (req, res) => {
-    const profile = db.getPlayerProfile(req.user.id);
+app.get('/api/profile', authenticateToken, async (req, res) => {
+    const profile = await db.getPlayerProfile(req.user.id);
     if (!profile) {
         return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
     }
@@ -108,28 +108,28 @@ app.get('/api/profile', authenticateToken, (req, res) => {
     res.json({ profile });
 });
 
-app.get('/api/campaign', authenticateToken, (req, res) => {
-    const progress = db.ensureCampaignProgress(req.user.id);
+app.get('/api/campaign', authenticateToken, async (req, res) => {
+    const progress = await db.ensureCampaignProgress(req.user.id);
     res.json({ progress });
 });
 
-app.post('/api/campaign/complete', authenticateToken, (req, res) => {
+app.post('/api/campaign/complete', authenticateToken, async (req, res) => {
     const { missionId, rewardCardId } = req.body;
-    const progress = db.getCampaignProgress(req.user.id);
+    const progress = await db.getCampaignProgress(req.user.id);
     const completedMissions = Array.from(new Set([...(progress?.completedMissions || []), missionId]));
     const cardBag = [...(progress?.cardBag || [])];
     if (rewardCardId) {
         cardBag.push({ baseId: rewardCardId, defaultLevel: 1 });
     }
 
-    const updated = db.updateCampaignProgress(req.user.id, {
+    const updated = await db.updateCampaignProgress(req.user.id, {
         completedMissions,
         cardBag
     });
     res.json({ progress: updated });
 });
 
-app.put('/api/campaign/loadout', authenticateToken, (req, res) => {
+app.put('/api/campaign/loadout', authenticateToken, async (req, res) => {
     const { cardBag, currentNode, gold, currentHealth, completedNodes } = req.body;
     const updates = {};
     
@@ -139,7 +139,7 @@ app.put('/api/campaign/loadout', authenticateToken, (req, res) => {
     if (currentHealth !== undefined) updates.currentHealth = currentHealth;
     if (completedNodes !== undefined) updates.completedNodes = completedNodes;
     
-    const updated = db.updateCampaignProgress(req.user.id, updates);
+    const updated = await db.updateCampaignProgress(req.user.id, updates);
     res.json({ progress: updated });
 });
 
@@ -235,7 +235,7 @@ io.on('connection', (socket) => {
 
     });
 
-    socket.on('disconnect', (reason) => {
+    socket.on('disconnect', async (reason) => {
 
         removeFromQueue(socket.id);
 
@@ -249,7 +249,7 @@ io.on('connection', (socket) => {
 
             const remainingPlayer = room.players.find(p => p.socketId !== socket.id);
             if (remainingPlayer && remainingPlayer.userId) {
-                const updatedProfile = db.updatePlayerStats(remainingPlayer.userId, 'win');
+                const updatedProfile = await db.updatePlayerStats(remainingPlayer.userId, 'win');
                 room.players.forEach(remaining => {
                     if (remaining.socketId === socket.id) return;
                     io.to(remaining.socketId).emit('opponent_disconnected', {
@@ -366,7 +366,7 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on('game_over', (data) => {
+    socket.on('game_over', async (data) => {
         const { roomId, winnerRole } = data;
         const room = rooms[roomId];
 
@@ -385,10 +385,10 @@ io.on('connection', (socket) => {
             const loser = room.players.find(p => p.role !== winnerRole);
 
             if (winner && winner.userId) {
-                winnerProfile = db.updatePlayerStats(winner.userId, 'win');
+                winnerProfile = await db.updatePlayerStats(winner.userId, 'win');
             }
             if (loser && loser.userId) {
-                loserProfile = db.updatePlayerStats(loser.userId, 'loss');
+                loserProfile = await db.updatePlayerStats(loser.userId, 'loss');
             }
         }
 
