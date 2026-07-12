@@ -411,14 +411,16 @@ class GameState {
 
         if (cardBag.length === 0) {
             console.log('CardBag boş, starter deck yükleniyor');
-            const starterDeck = [2, 11, 6, 4]; // Buz Büyücüsü, İkiz Okçu, Kara Şövalye, Çevik Hançer
+            const starterDeck = window.campaignData?.starterDeck || [2, 11, 6, 4];
             this.campaignProgress.cardBag = starterDeck.map(id => ({ baseId: id, defaultLevel: 1 }));
             localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
             console.log('Starter deck yüklendi:', this.campaignProgress.cardBag);
             
-            // Sunucuya güncelle (eğer bağlıysa)
+            // Sunucuya güncelle (eğer bağlıysa) - hata görmezden gel
             if (window.Network && window.Network.updateCampaign) {
-                window.Network.updateCampaign(this.campaignProgress);
+                window.Network.updateCampaign(this.campaignProgress).catch(err => {
+                    console.log('Sunucu güncelleme hatası (görmezden gelindi):', err);
+                });
             }
         }
 

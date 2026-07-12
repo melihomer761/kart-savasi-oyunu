@@ -126,7 +126,9 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/campaign', authenticateToken, async (req, res) => {
-    const progress = await db.ensureCampaignProgress(req.user.id);
+    // campaign.js'deki starterDeck'i kullan
+    const starterDeck = require('./campaign.js').starterDeck || [2, 11, 6, 4];
+    const progress = await db.ensureCampaignProgress(req.user.id, starterDeck);
     res.json({ progress });
 });
 

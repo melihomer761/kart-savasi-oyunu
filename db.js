@@ -207,29 +207,13 @@ async function getCampaignProgress(userId) {
   }
 }
 
-async function ensureCampaignProgress(userId, starterDeck = [1, 3, 5, 7]) {
+async function ensureCampaignProgress(userId, starterDeck = [2, 11, 6, 4]) {
   if (!userId) return null;
   const existing = await getCampaignProgress(userId);
   console.log('ensureCampaignProgress - userId:', userId, 'existing:', existing);
   if (existing) {
-    // Eğer cardBag boşsa, starterDeck yükle
-    if (!existing.cardBag || existing.cardBag.length === 0) {
-      console.log('CardBag boş, starterDeck yükleniyor');
-      const newCardBag = starterDeck.map(baseId => ({ baseId, defaultLevel: 1 }));
-      const client = await pool.connect();
-      try {
-        await client.query(
-          'UPDATE campaign_progress SET cardbag = $1 WHERE userId = $2',
-          [JSON.stringify(newCardBag), userId]
-        );
-        const updated = await getCampaignProgress(userId);
-        console.log('Güncellenmiş progress:', updated);
-        return updated;
-      } finally {
-        client.release();
-      }
-    }
-    console.log('CardBag dolu, mevcut progress dönülüyor');
+    // Mevcut progress varsa olduğu gibi döndür (cardBag boşsa oyuncu ölmüştür)
+    console.log('Mevcut progress dönülüyor');
     return existing;
   }
 
