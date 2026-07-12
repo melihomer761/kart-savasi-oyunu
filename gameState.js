@@ -262,9 +262,45 @@ class GameState {
         if (!missionList) return;
 
         const campaignMap = window.campaignData?.campaignMap || [];
+        
+        // Önce LocalStorage'dan yedeklemeyi dene
+        const localProgress = localStorage.getItem('campaignProgress');
+        if (localProgress) {
+            try {
+                this.campaignProgress = JSON.parse(localProgress);
+            } catch (e) {
+                console.log('LocalStorage parse hatası:', e);
+            }
+        }
+        
         if (window.Network && window.Network.isAuthenticated()) {
-            const progress = await window.Network.fetchCampaign();
-            this.campaignProgress = progress;
+            try {
+                const progress = await window.Network.fetchCampaign();
+                if (progress) {
+                    this.campaignProgress = progress;
+                    // LocalStorage'ı güncelle
+                    localStorage.setItem('campaignProgress', JSON.stringify(progress));
+                }
+            } catch (err) {
+                console.log('Sunucudan veri alınamadı, LocalStorage kullanılıyor:', err);
+            }
+            
+            const progress = this.campaignProgress;
+            if (!progress) {
+                console.log('Progress null, starter deck yükleniyor');
+                const starterDeck = window.campaignData?.starterDeck || [2, 11, 6, 4];
+                this.campaignProgress = {
+                    cardBag: starterDeck.map(cardId => ({
+                        baseId: cardId,
+                        defaultLevel: 1
+                    })),
+                    currentHealth: 300,
+                    gold: 0,
+                    currentNode: 0,
+                    completedNodes: []
+                };
+                localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
+            }
             
             // İlk kez sefere başlıyorsa, başlangıç kartlarını çantaya ekle
             if (!progress.cardBag || progress.cardBag.length === 0) {
@@ -280,7 +316,11 @@ class GameState {
                 // LocalStorage'a kaydet
                 localStorage.setItem('campaignProgress', JSON.stringify(progress));
                 // Sunucuya güncelle
-                await window.Network.updateCampaign(progress);
+                try {
+                    await window.Network.updateCampaign(progress);
+                } catch (err) {
+                    console.log('Sunucuya güncelleme hatası (görmezden gelindi):', err);
+                }
             }
             
             const currentNode = progress?.currentNode || 0;
@@ -403,6 +443,22 @@ class GameState {
         if (!loadoutScreen || !list) return;
         if (typeof UI !== 'undefined' && UI.showScreen) {
             UI.showScreen('campaign-loadout-screen');
+        }
+
+        // campaignProgress null kontrolü
+        if (!this.campaignProgress) {
+            console.log('campaignProgress null, LocalStorage\'dan yükleniyor');
+            const localProgress = localStorage.getItem('campaignProgress');
+            if (localProgress) {
+                try {
+                    this.campaignProgress = JSON.parse(localProgress);
+                } catch (e) {
+                    console.log('LocalStorage parse hatası:', e);
+                    this.campaignProgress = {};
+                }
+            } else {
+                this.campaignProgress = {};
+            }
         }
 
         const cardBag = this.campaignProgress?.cardBag || [];
