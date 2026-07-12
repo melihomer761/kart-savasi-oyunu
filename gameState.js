@@ -410,9 +410,16 @@ class GameState {
         this.campaignSelectedCards = []; // Seçili kartları sıfırla
 
         if (cardBag.length === 0) {
-            console.log('CardBag boş, mesaj gösteriliyor');
-            list.innerHTML = '<p>Çantanızda kart yok.</p>';
-            return;
+            console.log('CardBag boş, starter deck yükleniyor');
+            const starterDeck = [2, 11, 6, 4]; // Buz Büyücüsü, İkiz Okçu, Kara Şövalye, Çevik Hançer
+            this.campaignProgress.cardBag = starterDeck.map(id => ({ baseId: id, defaultLevel: 1 }));
+            localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
+            console.log('Starter deck yüklendi:', this.campaignProgress.cardBag);
+            
+            // Sunucuya güncelle (eğer bağlıysa)
+            if (window.Network && window.Network.updateCampaign) {
+                window.Network.updateCampaign(this.campaignProgress);
+            }
         }
 
         console.log('CardBag dolu, kartlar render ediliyor');
@@ -599,12 +606,22 @@ class GameState {
     }
 
     confirmAiConfig(aiConfig) {
-        this.aiConfig = {
-            deckId: aiConfig.deckId,
-            levelMode: aiConfig.levelMode,
-            flatLevel: aiConfig.flatLevel,
-            focusTarget: null
-        };
+        // Campaign modunda aiConfig kullanılmaz
+        if (this.campaignMode) {
+            this.aiConfig = {
+                deckId: null,
+                levelMode: 'flat',
+                flatLevel: 1,
+                focusTarget: null
+            };
+        } else {
+            this.aiConfig = {
+                deckId: aiConfig.deckId,
+                levelMode: aiConfig.levelMode,
+                flatLevel: aiConfig.flatLevel,
+                focusTarget: null
+            };
+        }
         
         const configScreen = document.getElementById('pvc-config-screen');
         if (configScreen) configScreen.style.display = 'none';
