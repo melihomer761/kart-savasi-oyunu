@@ -14,7 +14,7 @@ function validateDeck(deck) {
     // Her kartın baseId ve level özelliği olmalı
     for (let i = 0; i < deck.length; i++) {
         const card = deck[i];
-        if (!card.baseId) {
+        if (card.baseId === undefined || card.baseId === null) {
             return { valid: false, error: `Kart ${i + 1} geçersiz - baseId eksik` };
         }
 

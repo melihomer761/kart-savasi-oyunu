@@ -1,0 +1,55 @@
+=== BALANCE SIMULATION REPORT ===
+Total Games: 100000
+
+Kart		Pick Rate (%)	Win Rate (%)	Toplam Hasar	Ort. Hasar	Hasar/Tur	Engellenen	Fazladan	Ort. Tur	Ort. Öldürme
+------------------------------------------------------------------------------------------------------------------------
+Ateş Savaşçısı	6.29		67.41		8836342		175.51	21.16	837220	0	8.29	1.34
+Kara Şövalye	6.27		65.76		10209853		203.52	21.32	0	1126528	9.55	1.66
+Büyü Tazısı	6.23		65.76		7784838		156.09	21.37	1601976	0	7.30	1.36
+Buz Büyücüsü	6.26		63.54		6227165		124.39	27.64	1188156	0	4.50	0.88
+İkili Siper	6.22		55.37		5905032		118.73	15.90	1020309	0	7.47	0.98
+İkiz Okçu	6.22		54.21		4496424		90.36	20.48	1049481	0	4.41	0.78
+Zehirli Ok	6.27		54.06		7402556		147.58	15.27	0	587296	9.66	1.16
+Taş Kalkan	6.22		53.52		7030233		141.30	15.25	0	0	9.26	1.26
+Kalkan Kopyalayıcı	6.24		46.78		3330044		66.76	23.51	0	0	2.84	0.42
+Savaş Borazanı	6.25		43.87		3452666		69.04	12.53	287473	0	5.51	0.71
+Şifacı	6.27		41.10		1703793		33.98	10.37	513144	0	3.28	0.27
+Dikenli Deri	6.30		41.08		5953398		118.05	10.57	0	2633790	11.17	0.92
+Hayalet	6.25		39.98		1986541		39.75	36.68	0	560424	1.08	0.04
+Öfke Ayini	6.22		36.94		1125674		22.63	13.50	0	0	1.68	0.27
+Çevik Hançer	6.24		35.84		1354366		27.11	9.61	174676	0	2.82	0.08
+Kan Emici	6.25		34.67		939372		18.79	9.17	0	192510	2.05	0.20
+
+=== TOP SYNERGIES ===
+Kart 1		Kart 2		Sinerji Skoru	Oyun Sayısı
+--------------------------------------------------------
+Ateş Savaşçısı	Kara Şövalye	17.64		10086
+Ateş Savaşçısı	Büyü Tazısı	17.05		10133
+Kara Şövalye	Büyü Tazısı	16.87		10055
+Taş Kalkan	Kara Şövalye	15.51		10071
+Ateş Savaşçısı	Buz Büyücüsü	15.31		9989
+Ateş Savaşçısı	İkili Siper	15.26		10001
+Kara Şövalye	Zehirli Ok	15.01		10049
+Kara Şövalye	İkili Siper	14.73		9825
+Buz Büyücüsü	Büyü Tazısı	14.55		9961
+Buz Büyücüsü	Kara Şövalye	14.10		10047
+
+=== LEVEL ROI (EN İYİ SEVİYELER) ===
+Kart		En İyi Seviye	Win Rate (%)	Oyun Sayısı
+--------------------------------------------------------
+Ateş Savaşçısı		Seviye 4		72.68		9069
+Buz Büyücüsü		Seviye 4		72.59		9065
+Taş Kalkan		Seviye 4		63.76		9038
+Çevik Hançer		Seviye 2		38.97		12113
+Hayalet		Seviye 2		42.42		12121
+Kara Şövalye		Seviye 5		69.34		6572
+Şifacı		Seviye 4		43.43		9111
+Zehirli Ok		Seviye 1		56.32		12279
+Savaş Borazanı		Seviye 2		46.57		12058
+Kan Emici		Seviye 2		36.15		12199
+İkiz Okçu		Seviye 4		62.27		8972
+Büyü Tazısı		Seviye 5		73.80		6495
+Kalkan Kopyalayıcı		Seviye 3		50.75		10271
+Öfke Ayini		Seviye 2		39.41		12049
+Dikenli Deri		Seviye 5		59.08		6638
+İkili Siper		Seviye 5		61.30		6507

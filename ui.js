@@ -474,6 +474,7 @@ const UI = {
                 <th style="padding: 10px; text-align: center;">Verilen Hasar</th>
                 <th style="padding: 10px; text-align: center; color: #d32f2f;">Giden Can</th>
                 <th style="padding: 10px; text-align: center;">Engellenen Hasar</th>
+                <th style="padding: 10px; text-align: center; color: #ff9800;">Fazladan Alınan Hasar</th>
                 <th style="padding: 10px; text-align: center; color: #388e3c;">Kalan Can</th>
             </tr>
         `;
@@ -499,6 +500,7 @@ const UI = {
                 <td style="padding: 10px; text-align: center; font-weight: bold; color: #1565c0;">${card.battleStats.damageDealt}</td>
                 <td style="padding: 10px; text-align: center; font-weight: bold; color: #d32f2f;">${card.battleStats.damageTaken}</td>
                 <td style="padding: 10px; text-align: center; font-weight: bold; color: #757575;">${card.battleStats.damageBlocked}</td>
+                <td style="padding: 10px; text-align: center; font-weight: bold; color: #ff9800;">${card.battleStats.extraDamageTaken || 0}</td>
                 <td style="padding: 10px; text-align: center; font-weight: bold; color: #388e3c;">${kalanCan}</td>
             `;
             tbody.appendChild(row);
