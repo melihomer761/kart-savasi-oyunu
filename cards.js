@@ -1,28 +1,5 @@
 const cardsData = [
     {
-        id: 0,
-        name: "Gardiyan",
-        health: 10,
-        attack: 10,
-        speed: 5,
-        armor: 0,
-        description: "Basit bir gardiyan kartı. Özelliği yok.",
-        levelStats: {
-            health: [10, 25, 40, 55, 70],
-            attack: [10, 15, 20, 25, 30],
-            speed: [5, 6, 7, 8, 9],
-            armor: [0, 1, 2, 3, 4]
-        },
-        levelAbilities: {},
-        levelDescriptions: [
-            "Basit bir gardiyan kartı. Özelliği yok.",
-            "Basit bir gardiyan kartı. Özelliği yok.",
-            "Basit bir gardiyan kartı. Özelliği yok.",
-            "Basit bir gardiyan kartı. Özelliği yok.",
-            "Basit bir gardiyan kartı. Özelliği yok."
-        ]
-    },
-    {
         id: 1,
         name: "Ateş Savaşçısı",
         health: 137,
@@ -618,7 +595,16 @@ class Card {
             attacker.battleStats.damageDealt += actualDamage;
         }
 
+        // Campaign modunda kalıcı kart ölümü kontrolü
+        const wasAlive = this.health > 0;
         this.updateCardElement();
+        
+        if (wasAlive && this.health <= 0 && this.gameState && this.gameState.campaignMode) {
+            // Campaign modunda kart öldüğünde gameState'e bildir
+            if (this.gameState.onCardDeath) {
+                this.gameState.onCardDeath(this);
+            }
+        }
         if (actualDamage > 0 && typeof UI !== 'undefined' && UI.showDamageText) {
             UI.showDamageText(this.element, actualDamage, type);
         }
@@ -767,16 +753,151 @@ const aiPreMadeDecks = [
     }
 ];
 
+// Düşman Özel Kartları (Sefer Modu İçin)
+const enemyCards = [
+    {
+        id: 0,
+        name: "Gardiyan",
+        health: 30,
+        attack: 10,
+        speed: 5,
+        armor: 0,
+        tier: 'Çelimsiz',
+        isEnemyOnly: true,
+        description: "Basit bir gardiyan kartı. Özelliği yok.",
+        levelStats: {
+            health: [30, 30, 30, 30, 60],
+            attack: [10, 10, 10, 10, 20],
+            speed: [3, 5, 7, 8, 9],
+            armor: [0, 0, 0, 2, 4]
+        },
+        levelAbilities: {},
+        levelDescriptions: [
+            "Basit bir gardiyan kartı. Özelliği yok.",
+            "Basit bir gardiyan kartı. Özelliği yok.",
+            "Basit bir gardiyan kartı. Özelliği yok.",
+            "Basit bir gardiyan kartı. Özelliği yok.",
+            "Basit bir gardiyan kartı. Özelliği yok."
+        ]
+    },
+    {
+        id: 17,
+        name: "Baş Gardiyan",
+        health: 10,
+        attack: 100,
+        speed: 11,
+        armor: 0,
+        tier: 'Çelimsiz',
+        isEnemyOnly: true,
+        description: "Güçlü bir gardiyan. Özelliği yok.",
+        levelStats: {
+            health: [10, 15, 20, 30, 40],
+            attack: [100, 100, 100, 100, 120],
+            speed: [11, 11, 11, 12, 12],
+            armor: [0, 0, 1, 1, 2]
+        },
+        levelAbilities: {},
+        levelDescriptions: [
+            "Güçlü bir gardiyan. Özelliği yok.",
+            "Güçlü bir gardiyan. Özelliği yok.",
+            "Güçlü bir gardiyan. Özelliği yok.",
+            "Güçlü bir gardiyan. Özelliği yok.",
+            "Güçlü bir gardiyan. Özelliği yok."
+        ]
+    },
+    {
+        id: 18,
+        name: "Molotofçu",
+        health: 55,
+        attack: 15,
+        speed: 6,
+        armor: -2,
+        tier: 'Çelimsiz',
+        isEnemyOnly: true,
+        description: "Rastgele ikinci bir düşmana saldırır.",
+        levelStats: {
+            health: [55, 65, 65, 65, 65],
+            attack: [15, 15, 15, 20, 20],
+            speed: [6, 6, 6, 8, 9],
+            armor: [-2, -2, -2, -2, -2]
+        },
+        levelAbilities: {
+            doubleStrikeChance: [50, 50, 60, 60, 70]
+        },
+        levelDescriptions: [
+            "Rastgele ikinci bir düşmana saldırır.",
+            "Rastgele ikinci bir düşmana saldırır. (+10 Can)",
+            "Rastgele ikinci bir düşmana saldırır. (+10 Can, %60 şans)",
+            "Rastgele ikinci bir düşmana saldırır. (+10 Can, %60 şans, +5 Hasar)",
+            "Rastgele ikinci bir düşmana saldırır. (+10 Can, %70 şans, +5 Hasar)"
+        ]
+    },
+    {
+        id: 19,
+        name: "Kitap Kurdu",
+        health: 70,
+        attack: 3,
+        speed: 3,
+        armor: 0,
+        tier: 'Çelimsiz',
+        isEnemyOnly: true,
+        description: "Her tur başında saldırısı artar.",
+        levelStats: {
+            health: [70, 70, 120, 120, 120],
+            attack: [3, 6, 6, 6, 6],
+            speed: [3, 3, 3, 3, 3],
+            armor: [0, 2, 2, 2, 4]
+        },
+        levelAbilities: {
+            attackGrowth: [2, 2, 2, 4, 4]
+        },
+        levelDescriptions: [
+            "Her tur başında saldırısı 2 artar.",
+            "Her tur başında saldırısı 2 artar.",
+            "Her tur başında saldırısı 2 artar. (+50 Can)",
+            "Her tur başında saldırısı 4 artar. (+50 Can)",
+            "Her tur başında saldırısı 4 artar. (+50 Can, +2 Zırh)"
+        ]
+    },
+    {
+        id: 20,
+        name: "Final Boss",
+        health: 500,
+        attack: 40,
+        speed: 8,
+        armor: 6,
+        tier: 'Kadim',
+        isEnemyOnly: true,
+        description: "Son düşman. Güçlü ve dayanıklı.",
+        levelStats: {
+            health: [500, 500, 500, 500, 500],
+            attack: [40, 40, 40, 40, 40],
+            speed: [8, 8, 8, 8, 8],
+            armor: [6, 6, 6, 6, 6]
+        },
+        levelAbilities: {},
+        levelDescriptions: [
+            "Son düşman. Güçlü ve dayanıklı.",
+            "Son düşman. Güçlü ve dayanıklı.",
+            "Son düşman. Güçlü ve dayanıklı.",
+            "Son düşman. Güçlü ve dayanıklı.",
+            "Son düşman. Güçlü ve dayanıklı."
+        ]
+    }
+];
+
 // Global olarak expose et
 if (typeof window !== 'undefined') {
     window.cardsData = cardsData;
     window.aiPreMadeDecks = aiPreMadeDecks;
+    window.enemyCards = enemyCards;
 }
 
 // Node.js için export
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         cardsData,
-        aiPreMadeDecks
+        aiPreMadeDecks,
+        enemyCards
     };
 }

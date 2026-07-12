@@ -327,16 +327,15 @@ class HeadlessGameState {
 class Card {
     constructor(data) {
         this.id = data.id;
-        this.baseId = data.id;
+        this.baseId = data.baseId || data.id;
         this.name = data.name;
-        this.health = data.health;
-        this.attack = data.attack;
-        this.speed = data.speed;
-        this.armor = data.armor;
-        this.level = 1;
+        this.level = data.level || 1;
         this.owner = null;
         this.levelStats = data.levelStats;
         this.levelAbilities = data.levelAbilities;
+        
+        // Seviyeye göre istatistikleri ayarla
+        this.updateLevelStats(this.level);
     }
 
     updateLevelStats(level) {
@@ -835,16 +834,95 @@ function generateReport(cardStats, levelStats, pickCounts, totalGames, pairingMa
     console.log(`Rapor kaydedildi: ${reportPath}`);
 }
 
+// Özel deste oluşturma fonksiyonu
+function createCustomDeck() {
+    const { cardsData } = require('./cards.js');
+    
+    const deckData = [
+        { baseId: 4, level: 4 },  // Çevik Hançer Lv 4
+        { baseId: 12, level: 2 }, // Büyü Tazısı Lv 2
+        { baseId: 9, level: 5 },  // Savaş Borazanı Lv 5
+        { baseId: 10, level: 2 }  // Kan Emici Lv 2
+    ];
+    
+    return deckData.map(data => {
+        const cardTemplate = cardsData.find(c => c.id === data.baseId);
+        const card = new Card({
+            id: cardTemplate.id,
+            baseId: cardTemplate.id,
+            level: data.level,
+            name: cardTemplate.name,
+            health: cardTemplate.health,
+            attack: cardTemplate.attack,
+            speed: cardTemplate.speed,
+            armor: cardTemplate.armor,
+            description: cardTemplate.description,
+            levelStats: cardTemplate.levelStats,
+            levelDescriptions: cardTemplate.levelDescriptions,
+            levelAbilities: cardTemplate.levelAbilities
+        });
+        return card;
+    });
+}
+
+// Gauntlet Test - Özel deste vs rastgele desteler
+function runGauntletTest(gameCount = 10000) {
+    console.log(`Starting Gauntlet Test: Custom Deck vs ${gameCount} Random Decks...`);
+    
+    const customDeck = createCustomDeck();
+    let wins = 0;
+    let losses = 0;
+    let totalTurns = 0;
+    
+    for (let i = 0; i < gameCount; i++) {
+        const randomDeck = generateRandomDeck();
+        
+        const gameState = new HeadlessGameState(customDeck, randomDeck, null);
+        const results = gameState.run();
+        
+        if (results.winner === 1) {
+            wins++;
+        } else {
+            losses++;
+        }
+        
+        totalTurns += results.turnCount;
+        
+        if ((i + 1) % 1000 === 0) {
+            console.log(`Completed ${i + 1}/${gameCount} games...`);
+ console.log(`Current Win Rate: ${((wins / (i + 1)) * 100).toFixed(2)}%`);
+        }
+    }
+    
+    const winRate = (wins / gameCount) * 100;
+    const avgTurns = totalTurns / gameCount;
+    
+    console.log('\n=== GAUNTLET TEST RESULTS ===\n');
+    console.log(`Custom Deck vs ${gameCount} Random Decks`);
+    console.log(`Wins: ${wins}`);
+    console.log(`Losses: ${losses}`);
+    console.log(`Win Rate: ${winRate.toFixed(2)}%`);
+    console.log(`Average Turns: ${avgTurns.toFixed(2)}`);
+    console.log('\n=== CUSTOM DECK ===\n');
+    customDeck.forEach(card => {
+        console.log(`${card.name} - Level ${card.level}`);
+    });
+    console.log('\n=== END OF REPORT ===\n');
+}
+
 // Çalıştır
 if (require.main === module) {
     const args = process.argv.slice(2);
-    const mode = args[0] || 'mass'; // 'mass' veya 'evolutionary'
+    const mode = args[0] || 'mass'; // 'mass', 'evolutionary' veya 'gauntlet'
     
     if (mode === 'evolutionary') {
         const generations = args[1] ? parseInt(args[1]) : 20;
         const populationSize = args[2] ? parseInt(args[2]) : 50;
         const gamesPerDeck = args[3] ? parseInt(args[3]) : 5;
         runEvolutionarySimulation(generations, populationSize, gamesPerDeck);
+    } else if (mode === 'gauntlet') {
+        const gameCount = args[1] ? parseInt(args[1]) : 10000;
+        runGauntletTest(gameCount);
     } else {
         const gameCount = args[1] ? parseInt(args[1]) : 1000;
         runMassSimulation(gameCount);
