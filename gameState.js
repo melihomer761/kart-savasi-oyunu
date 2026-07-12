@@ -2055,8 +2055,11 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
     async resetCampaign() {
         if (!window.Network || !window.Network.isAuthenticated()) return;
         
-        // Seferi sıfırla - currentNode: 0, currentHealth: 300, gold: 0
-        const updated = await window.Network.saveLoadout(this.campaignProgress?.cardBag || [], {
+        // Seferi sıfırla - currentNode: 0, currentHealth: 300, gold: 0, cardBag: starterDeck
+        const starterDeck = window.campaignData?.starterDeck || [2, 11, 6, 4];
+        const newCardBag = starterDeck.map(id => ({ baseId: id, defaultLevel: 1 }));
+        
+        const updated = await window.Network.saveLoadout(newCardBag, {
             currentNode: 0,
             currentHealth: 300,
             gold: 0,
@@ -2065,6 +2068,9 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
         if (updated) {
             this.campaignProgress = updated;
         }
+        
+        // LocalStorage'ı da güncelle
+        localStorage.removeItem('campaignProgress');
         
         this.updateCampaignHUD();
         this.showCampaignHub();
