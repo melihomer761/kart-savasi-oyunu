@@ -2049,6 +2049,24 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
     async handleCampaignWin() {
         console.log('handleCampaignWin çağrıldı');
         
+        // Ölen kartları cardBag'dan sil
+        const deadCardBaseIds = this.player1Cards
+            .filter(card => card.health <= 0)
+            .map(card => card.baseId);
+        
+        if (deadCardBaseIds.length > 0) {
+            console.log('Ölen kartlar:', deadCardBaseIds);
+            this.campaignProgress.cardBag = this.campaignProgress.cardBag.filter(
+                card => !deadCardBaseIds.includes(card.baseId)
+            );
+            localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
+            
+            // Sunucuya güncelle (eğer bağlıysa)
+            if (window.Network && window.Network.updateCampaign) {
+                await window.Network.updateCampaign(this.campaignProgress);
+            }
+        }
+        
         // Node'u tamamlandı olarak işaretle
         const nodeId = this.currentCampaignNode?.id;
         console.log('Node ID:', nodeId);
@@ -2096,6 +2114,19 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
     }
 
     async handleCampaignLoss() {
+        // Ölen kartları cardBag'dan sil
+        const deadCardBaseIds = this.player1Cards
+            .filter(card => card.health <= 0)
+            .map(card => card.baseId);
+        
+        if (deadCardBaseIds.length > 0) {
+            console.log('Ölen kartlar:', deadCardBaseIds);
+            this.campaignProgress.cardBag = this.campaignProgress.cardBag.filter(
+                card => !deadCardBaseIds.includes(card.baseId)
+            );
+            localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
+        }
+        
         // Düşmanların kalan canını topla
         const totalEnemyHealth = this.player2Cards
             .filter(card => card.health > 0)
@@ -2129,9 +2160,7 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
                 UI.showInfoMessage(`Kaybettin! ${totalEnemyHealth} hasar aldın. Kalan can: ${newHealth}`, 3000);
             }
             // Sefer merkezine dön
-            setTimeout(() => {
-                this.showCampaignHub();
-            }, 1000);
+            this.showCampaignHub();
         }
     }
 
@@ -2296,13 +2325,19 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
     async confirmRewardSelection() {
         // Seçilen kartları çantaya ekle
         for (const cardId of this.campaignRewardSelection) {
-            const rewardCard = this.currentRewardCards?.find(c => c.id === cardId);
+            const rewardCard = this.currentRewardCards?.find(c => c.baseId === cardId);
             const level = rewardCard ? rewardCard.level : 1;
             await this.addToCardBag(cardId, level);
         }
         
         this.campaignRewardSelection = [];
         this.currentRewardCards = [];
+        
+        // Reward ekranını kapat
+        const rewardScreen = document.getElementById('campaign-reward-screen');
+        if (rewardScreen) rewardScreen.style.display = 'none';
+        
+        // Sefer merkezine dön (tek seferlik)
         this.showCampaignHub();
     }
 
@@ -2328,8 +2363,9 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
         const shuffled = availableCards.sort(() => Math.random() - 0.5);
         const result = shuffled.slice(0, count);
         
-        // Rastgele level atama (düşük olasılıkla yüksek level)
+        // Rastgele level atama (düşük olasılıkla yüksek level) ve baseId ekle
         result.forEach(card => {
+            card.baseId = card.id; // baseId'yi ekle
             const rand = Math.random();
             if (rand < 0.1) {
                 card.level = 3; // %10 şansla level 3
@@ -2340,7 +2376,7 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             }
         });
         
-        console.log('getRandomRewardCards - result:', result.map(c => `${c.name} Lv ${c.level}`));
+        console.log('getRandomRewardCards - result:', result.map(c => `${c.name} Lv ${c.level} (baseId: ${c.baseId})`));
         return result;
     }
 
@@ -2372,14 +2408,13 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
         if (typeof UI !== 'undefined' && UI.showInfoMessage) {
             UI.showInfoMessage('Kart çantana eklendi!', 2000);
         }
-
-        // Sefer merkezine dön
-        setTimeout(() => {
-            this.showCampaignHub();
-        }, 1000);
     }
 
     async skipReward() {
+        // Reward ekranını kapat
+        const rewardScreen = document.getElementById('campaign-reward-screen');
+        if (rewardScreen) rewardScreen.style.display = 'none';
+        
         // Az altın ver (10 gold)
         await this.addGold(10);
 
@@ -2387,10 +2422,8 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             UI.showInfoMessage('Geçtin. +10 Altın kazandın.', 2000);
         }
 
-        // Sefer merkezine dön
-        setTimeout(() => {
-            this.showCampaignHub();
-        }, 1000);
+        // Sefer merkezine dön (tek seferlik)
+        this.showCampaignHub();
     }
 
     showCampfireScreen() {
