@@ -600,10 +600,30 @@ class GameState {
     }
 
     async startCampaignBattle() {
-        if (!this.currentCampaignMission) return;
+        console.log('startCampaignBattle çağrıldı');
+        console.log('currentCampaignMission:', this.currentCampaignMission);
+        console.log('currentCampaignNode:', this.currentCampaignNode);
+        console.log('campaignSelectedCards length:', this.campaignSelectedCards?.length);
+        
+        // currentCampaignMission null ise, currentCampaignNode'den oluştur
+        if (!this.currentCampaignMission && this.currentCampaignNode) {
+            this.currentCampaignMission = {
+                id: `node_${this.currentCampaignNode.id}`,
+                title: this.currentCampaignNode.title,
+                description: this.currentCampaignNode.description,
+                aiDeck: this.currentCampaignNode.aiDeck
+            };
+            console.log('currentCampaignMission currentCampaignNode\'den oluşturuldu:', this.currentCampaignMission);
+        }
+        
+        if (!this.currentCampaignMission) {
+            console.error('currentCampaignMission null!');
+            return;
+        }
         
         // Seçili kartları kontrol et
         if (!this.campaignSelectedCards || this.campaignSelectedCards.length !== 4) {
+            console.log('4 kart seçilmemiş, length:', this.campaignSelectedCards?.length);
             if (typeof UI !== 'undefined' && UI.showInfoMessage) {
                 UI.showInfoMessage('4 kart seçmelisin!', 2000);
             }
