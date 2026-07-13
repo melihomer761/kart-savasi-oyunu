@@ -279,8 +279,16 @@ class GameState {
         console.log('LocalStorage\'dan okunan ham veri:', localProgress);
         if (localProgress) {
             try {
-                this.campaignProgress = JSON.parse(localProgress);
-                console.log('LocalStorage\'dan progress yüklendi, currentNode:', this.campaignProgress.currentNode, 'completedNodes:', this.campaignProgress.completedNodes);
+                let parsed = JSON.parse(localProgress);
+                // Eğer sunucu verileri varsa (userId veya completedMissions), temizle
+                if (parsed.userId !== undefined || parsed.completedMissions !== undefined) {
+                    console.log('Eski sunucu verileri tespit edildi, LocalStorage temizleniyor');
+                    localStorage.removeItem('campaignProgress');
+                    this.campaignProgress = null;
+                } else {
+                    this.campaignProgress = parsed;
+                    console.log('LocalStorage\'dan progress yüklendi, currentNode:', this.campaignProgress.currentNode, 'completedNodes:', this.campaignProgress.completedNodes);
+                }
             } catch (e) {
                 console.log('LocalStorage parse hatası:', e);
             }
