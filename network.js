@@ -355,6 +355,28 @@ class NetworkManager {
         }
     }
 
+    async updateCampaign(progress) {
+        if (!this.authToken) return null;
+        try {
+            const response = await fetch(`${this.serverUrl}/api/campaign`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.authToken}`
+                },
+                body: JSON.stringify(progress)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Kampanya güncellenemedi');
+            }
+            return data.progress;
+        } catch (error) {
+            console.warn('Kampanya güncellenirken hata:', error);
+            return null;
+        }
+    }
+
     isAuthenticated() {
         return !!this.authToken;
     }
