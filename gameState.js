@@ -265,10 +265,11 @@ class GameState {
         
         // LocalStorage'dan progress çek
         const localProgress = localStorage.getItem('campaignProgress');
+        console.log('LocalStorage\'dan okunan ham veri:', localProgress);
         if (localProgress) {
             try {
                 this.campaignProgress = JSON.parse(localProgress);
-                console.log('LocalStorage\'dan progress yüklendi, currentNode:', this.campaignProgress.currentNode);
+                console.log('LocalStorage\'dan progress yüklendi, currentNode:', this.campaignProgress.currentNode, 'completedNodes:', this.campaignProgress.completedNodes);
             } catch (e) {
                 console.log('LocalStorage parse hatası:', e);
             }
@@ -2088,9 +2089,13 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             this.campaignProgress.completedNodes = completedNodes;
             this.campaignProgress.currentNode = nextNodeId;
             
+            console.log('Kaydedilmeden önce - currentNode:', this.campaignProgress.currentNode, 'completedNodes:', this.campaignProgress.completedNodes);
+            
             // LocalStorage'a kaydet
             localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
-            console.log('LocalStorage\'a kaydedildi:', JSON.parse(localStorage.getItem('campaignProgress')));
+            
+            const saved = JSON.parse(localStorage.getItem('campaignProgress'));
+            console.log('LocalStorage\'a kaydedildi - currentNode:', saved.currentNode, 'completedNodes:', saved.completedNodes);
         }
 
         // Altın kazan (normal savaş: 100, boss: 200)
