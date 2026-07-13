@@ -560,15 +560,20 @@ class GameState {
     }
 
     toggleLoadoutCard(cardIndex, cardEl) {
+        console.log('toggleLoadoutCard çağrıldı, cardIndex:', cardIndex);
         const cardBag = this.campaignProgress?.cardBag || [];
+        console.log('cardBag length:', cardBag.length);
         const card = cardBag[cardIndex];
+        console.log('Seçilen kart:', card);
         
         const selectedIndex = this.campaignSelectedCards.findIndex(c => c.baseId === card.baseId);
+        console.log('selectedIndex:', selectedIndex, 'campaignSelectedCards length:', this.campaignSelectedCards.length);
         
         if (selectedIndex >= 0) {
             // Zaten seçili, kaldır
             this.campaignSelectedCards.splice(selectedIndex, 1);
             cardEl.classList.remove('selected');
+            console.log('Kart seçimden kaldırıldı, yeni length:', this.campaignSelectedCards.length);
         } else {
             // Seçili değil, ekle (max 4)
             if (this.campaignSelectedCards.length >= 4) {
@@ -579,6 +584,7 @@ class GameState {
             }
             this.campaignSelectedCards.push(card);
             cardEl.classList.add('selected');
+            console.log('Kart seçime eklendi, yeni length:', this.campaignSelectedCards.length);
         }
 
         // Seçili sayısını güncelle
