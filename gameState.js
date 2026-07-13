@@ -1972,8 +1972,10 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
     }
 
     checkForWinner() {
+        console.log('checkForWinner çağrıldı, gameMode:', this.gameMode, 'campaignMode:', this.campaignMode);
         const player1Alive = this.player1Cards.some(card => card.health > 0);
         const player2Alive = this.player2Cards.some(card => card.health > 0);
+        console.log('player1Alive:', player1Alive, 'player2Alive:', player2Alive);
 
         // Boss savaşında özel mantık: 4 kart ölürse maç bitmez, boss canı kaydet
         if (this.campaignMode && this.currentCampaignNode && this.currentCampaignNode.type === 'boss') {
@@ -2024,10 +2026,12 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
 
         if (!player1Alive) {
             const winnerName = this.gameMode === 'pvc' ? 'Bilgisayar' : 'Oyuncu 2';
+            console.log('Oyuncu 2 kazandı, endGame çağrılıyor');
             this.endGame(winnerName, 'player2');
             return true;
         } else if (!player2Alive) {
             const winnerName = 'Oyuncu 1';
+            console.log('Oyuncu 1 kazandı, endGame çağrılıyor');
             this.endGame(winnerName, 'player1');
             return true;
         }
