@@ -263,7 +263,22 @@ class GameState {
 
         const campaignMap = window.campaignData?.campaignMap || [];
         
-        // LocalStorage'dan progress yükle (her zaman)
+        // Sunucudan progress çek (eğer bağlıysa)
+        if (window.Network && window.Network.isAuthenticated()) {
+            try {
+                const progress = await window.Network.fetchCampaign();
+                if (progress) {
+                    this.campaignProgress = progress;
+                    // LocalStorage'ı güncelle
+                    localStorage.setItem('campaignProgress', JSON.stringify(progress));
+                    console.log('Sunucudan progress yüklendi, currentNode:', progress.currentNode);
+                }
+            } catch (err) {
+                console.log('Sunucudan veri alınamadı, LocalStorage kullanılıyor:', err);
+            }
+        }
+        
+        // LocalStorage'dan yedeklemeyi dene
         const localProgress = localStorage.getItem('campaignProgress');
         if (localProgress) {
             try {
@@ -274,101 +289,99 @@ class GameState {
             }
         }
         
-        if (window.Network && window.Network.isAuthenticated()) {
-            const progress = this.campaignProgress;
-            if (!progress) {
-                console.log('Progress null, starter deck yükleniyor');
-                const starterDeck = window.campaignData?.starterDeck || [2, 11, 6, 4];
-                this.campaignProgress = {
-                    cardBag: starterDeck.map(cardId => ({
-                        baseId: cardId,
-                        defaultLevel: 1
-                    })),
-                    currentHealth: 300,
-                    gold: 0,
-                    currentNode: 0,
-                    completedNodes: []
-                };
-                localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
-            }
-            
-            // İlk kez sefere başlıyorsa, başlangıç kartlarını çantaya ekle
-            if (!progress.cardBag || progress.cardBag.length === 0) {
-                const starterDeck = window.campaignData?.starterDeck || [2, 11, 6, 4];
-                progress.cardBag = starterDeck.map(cardId => ({
+        const progress = this.campaignProgress;
+        if (!progress) {
+            console.log('Progress null, starter deck yükleniyor');
+            const starterDeck = window.campaignData?.starterDeck || [2, 11, 6, 4];
+            this.campaignProgress = {
+                cardBag: starterDeck.map(cardId => ({
                     baseId: cardId,
                     defaultLevel: 1
-                }));
-                progress.currentHealth = 300;
-                progress.gold = 0;
-                progress.currentNode = 0;
-                progress.completedNodes = [];
-                // LocalStorage'a kaydet
-                localStorage.setItem('campaignProgress', JSON.stringify(progress));
-                // Sunucuya güncelle
-                try {
-                    await window.Network.updateCampaign(progress);
-                } catch (err) {
-                    console.log('Sunucuya güncelleme hatası (görmezden gelindi):', err);
-                }
+                })),
+                currentHealth: 300,
+                gold: 0,
+                currentNode: 0,
+                completedNodes: []
+            };
+            localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
+        }
+        
+        // İlk kez sefere başlıyorsa, başlangıç kartlarını çantaya ekle
+        if (!progress.cardBag || progress.cardBag.length === 0) {
+            const starterDeck = window.campaignData?.starterDeck || [2, 11, 6, 4];
+            progress.cardBag = starterDeck.map(cardId => ({
+                baseId: cardId,
+                defaultLevel: 1
+            }));
+            progress.currentHealth = 300;
+            progress.gold = 0;
+            progress.currentNode = 0;
+            progress.completedNodes = [];
+            // LocalStorage'a kaydet
+            localStorage.setItem('campaignProgress', JSON.stringify(progress));
+            // Sunucuya güncelle
+            try {
+                await window.Network.updateCampaign(progress);
+            } catch (err) {
+                console.log('Sunucuya güncelleme hatası (görmezden gelindi):', err);
             }
-            
-            const currentNode = progress?.currentNode || 0;
-            const completedNodes = new Set(progress?.completedNodes || []);
-            
-            console.log('renderCampaignMissionList - currentNode:', currentNode, 'completedNodes:', Array.from(completedNodes));
+        }
+        
+        const currentNode = progress?.currentNode || 0;
+        const completedNodes = new Set(progress?.completedNodes || []);
+        
+        console.log('renderCampaignMissionList - currentNode:', currentNode, 'completedNodes:', Array.from(completedNodes));
 
-            // Yuvarlak harita render et
-            missionList.innerHTML = `
-                <div class="mission-circles-container">
-                    ${campaignMap.map((node, index) => {
-                        const isCurrent = index === currentNode;
-                        const isCompleted = completedNodes.has(node.id);
-                        const isLocked = index > currentNode;
-                        
-                        let circleClass = 'mission-circle';
-                        if (isCurrent) circleClass += ' active';
-                        if (isCompleted) circleClass += ' completed';
-                        if (isLocked) circleClass += ' locked';
-                        
-                        return `
-                            <div class="${circleClass}" data-node-id="${node.id}" title="${node.title}: ${node.description}">
-                                <span class="node-number">${node.id}</span>
-                                <span class="node-type">${this.getNodeTypeIcon(node.type)}</span>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-                <button id="start-node-btn" class="campaign-action-btn">Bölüm Başlat</button>
-            `;
-
-            // Yuvarlaklara tıklama event'i
-            missionList.querySelectorAll('.mission-circle').forEach(circle => {
-                circle.addEventListener('click', () => {
-                    const nodeId = parseInt(circle.dataset.nodeId);
-                    const progressCurrentNode = this.campaignProgress?.currentNode || 0;
+        // Yuvarlak harita render et
+        missionList.innerHTML = `
+            <div class="mission-circles-container">
+                ${campaignMap.map((node, index) => {
+                    const isCurrent = index === currentNode;
+                    const isCompleted = completedNodes.has(node.id);
+                    const isLocked = index > currentNode;
                     
-                    // Sadece mevcut node veya tamamlanmış node'lara tıklanabilir
-                    if (nodeId <= progressCurrentNode) {
-                        this.startCampaignNode(nodeId);
-                    }
-                });
-            });
+                    let circleClass = 'mission-circle';
+                    if (isCurrent) circleClass += ' active';
+                    if (isCompleted) circleClass += ' completed';
+                    if (isLocked) circleClass += ' locked';
+                    
+                    return `
+                        <div class="${circleClass}" data-node-id="${node.id}" title="${node.title}: ${node.description}">
+                            <span class="node-number">${node.id}</span>
+                            <span class="node-type">${this.getNodeTypeIcon(node.type)}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <button id="start-node-btn" class="campaign-action-btn">Bölüm Başlat</button>
+        `;
 
-            // Bölüm başlat butonu - event listener'ı ekle
-            const startBtn = document.getElementById('start-node-btn');
-            if (startBtn) {
-                // Eski event listener'ları temizle
-                const newStartBtn = startBtn.cloneNode(true);
-                startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+        // Yuvarlaklara tıklama event'i
+        missionList.querySelectorAll('.mission-circle').forEach(circle => {
+            circle.addEventListener('click', () => {
+                const nodeId = parseInt(circle.dataset.nodeId);
+                const progressCurrentNode = this.campaignProgress?.currentNode || 0;
                 
-                newStartBtn.addEventListener('click', () => {
-                    console.log('Bölüm başlat butonu tıklandı, currentNode:', currentNode);
-                    this.startCampaignNode(currentNode);
-                });
-            } else {
-                console.error('start-node-btn bulunamadı!');
-            }
+                // Sadece mevcut node veya tamamlanmış node'lara tıklanabilir
+                if (nodeId <= progressCurrentNode) {
+                    this.startCampaignNode(nodeId);
+                }
+            });
+        });
+
+        // Bölüm başlat butonu - event listener'ı ekle
+        const startBtn = document.getElementById('start-node-btn');
+        if (startBtn) {
+            // Eski event listener'ları temizle
+            const newStartBtn = startBtn.cloneNode(true);
+            startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+            
+            newStartBtn.addEventListener('click', () => {
+                console.log('Bölüm başlat butonu tıklandı, currentNode:', currentNode);
+                this.startCampaignNode(currentNode);
+            });
+        } else {
+            console.error('start-node-btn bulunamadı!');
         }
 
         if (bagCount) {
