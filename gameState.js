@@ -239,6 +239,17 @@ class GameState {
         if (typeof UI !== 'undefined' && UI.showScreen) {
             UI.showScreen('campaign-hub-screen');
         }
+        
+        // LocalStorage'dan progress çek (this.campaignProgress varsa kullanma)
+        const localProgress = localStorage.getItem('campaignProgress');
+        if (localProgress) {
+            try {
+                this.campaignProgress = JSON.parse(localProgress);
+            } catch (e) {
+                console.log('LocalStorage parse hatası:', e);
+            }
+        }
+        
         this.renderCampaignMissionList();
         this.updateCampaignHUD();
     }
