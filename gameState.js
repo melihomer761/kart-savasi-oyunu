@@ -2090,6 +2090,7 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             
             // LocalStorage'a kaydet
             localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
+            console.log('LocalStorage\'a kaydedildi:', JSON.parse(localStorage.getItem('campaignProgress')));
         }
 
         // Altın kazan (normal savaş: 100, boss: 200)
