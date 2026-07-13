@@ -263,28 +263,18 @@ class GameState {
 
         const campaignMap = window.campaignData?.campaignMap || [];
         
-        // Önce LocalStorage'dan yedeklemeyi dene
+        // LocalStorage'dan progress yükle (her zaman)
         const localProgress = localStorage.getItem('campaignProgress');
         if (localProgress) {
             try {
                 this.campaignProgress = JSON.parse(localProgress);
+                console.log('LocalStorage\'dan progress yüklendi, currentNode:', this.campaignProgress.currentNode);
             } catch (e) {
                 console.log('LocalStorage parse hatası:', e);
             }
         }
         
         if (window.Network && window.Network.isAuthenticated()) {
-            try {
-                const progress = await window.Network.fetchCampaign();
-                if (progress) {
-                    this.campaignProgress = progress;
-                    // LocalStorage'ı güncelle
-                    localStorage.setItem('campaignProgress', JSON.stringify(progress));
-                }
-            } catch (err) {
-                console.log('Sunucudan veri alınamadı, LocalStorage kullanılıyor:', err);
-            }
-            
             const progress = this.campaignProgress;
             if (!progress) {
                 console.log('Progress null, starter deck yükleniyor');
@@ -325,6 +315,8 @@ class GameState {
             
             const currentNode = progress?.currentNode || 0;
             const completedNodes = new Set(progress?.completedNodes || []);
+            
+            console.log('renderCampaignMissionList - currentNode:', currentNode, 'completedNodes:', Array.from(completedNodes));
 
             // Yuvarlak harita render et
             missionList.innerHTML = `
