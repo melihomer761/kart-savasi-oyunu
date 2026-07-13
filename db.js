@@ -249,8 +249,8 @@ async function updateCampaignProgress(userId, updates) {
   try {
     await client.query(
       `UPDATE campaign_progress 
-       SET cardbag = $1, completedmissions = $2, gold = $3, currenthealth = $4, currentnode = $5, completednodes = $6, "updatedAt" = $7 
-       WHERE userId = $8`,
+       SET cardbag = $1, completedmissions = $2, gold = $3, currenthealth = $4, currentnode = $5, completednodes = $6, updatedat = $8
+       WHERE userId = $7`,
       [
         JSON.stringify(next.cardBag),
         JSON.stringify(next.completedMissions),
@@ -258,8 +258,8 @@ async function updateCampaignProgress(userId, updates) {
         next.currentHealth,
         next.currentNode,
         JSON.stringify(next.completedNodes),
-        next.updatedAt,
-        userId
+        userId,
+        next.updatedAt
       ]
     );
     return getCampaignProgress(userId);

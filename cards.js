@@ -762,14 +762,14 @@ const enemyCards = [
         attack: 10,
         speed: 5,
         armor: 0,
-        tier: 'Çelimsiz',
+        tier: 'Zayıf',
         isEnemyOnly: true,
         description: "Basit bir gardiyan kartı. Özelliği yok.",
         levelStats: {
-            health: [30, 30, 30, 30, 60],
+            health: [30, 40, 50, 80, 100],
             attack: [10, 10, 10, 10, 20],
             speed: [3, 5, 7, 8, 9],
-            armor: [0, 0, 0, 2, 4]
+            armor: [0, 1, 1, 2, 4]
         },
         levelAbilities: {},
         levelDescriptions: [
@@ -787,7 +787,7 @@ const enemyCards = [
         attack: 100,
         speed: 11,
         armor: 0,
-        tier: 'Çelimsiz',
+        tier: 'Zayıf',
         isEnemyOnly: true,
         description: "Güçlü bir gardiyan. Özelliği yok.",
         levelStats: {
@@ -812,7 +812,7 @@ const enemyCards = [
         attack: 15,
         speed: 6,
         armor: -2,
-        tier: 'Çelimsiz',
+        tier: 'Zayıf',
         isEnemyOnly: true,
         description: "Rastgele ikinci bir düşmana saldırır.",
         levelStats: {
@@ -839,7 +839,7 @@ const enemyCards = [
         attack: 3,
         speed: 3,
         armor: 0,
-        tier: 'Çelimsiz',
+        tier: 'Zayıf',
         isEnemyOnly: true,
         description: "Her tur başında saldırısı artar.",
         levelStats: {

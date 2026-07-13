@@ -605,6 +605,20 @@ class GameState {
             if (tutorialOverlay) {
                 tutorialOverlay.style.display = 'flex';
                 
+                // Kart örneği oluştur (Çevik Hançer - starter deck'ten)
+                const cardExampleDiv = document.getElementById('tutorial-card-example');
+                if (cardExampleDiv) {
+                    const cardData = window.cardsData?.find(c => c.id === 4); // Çevik Hançer
+                    if (cardData) {
+                        const cardObj = new Card(cardData);
+                        cardObj.baseId = cardData.id;
+                        cardObj.level = 1;
+                        cardObj.updateLevelStats(1);
+                        const cardElement = cardObj.createCardElement();
+                        cardExampleDiv.innerHTML = cardElement.outerHTML;
+                    }
+                }
+                
                 // Anladım butonu event listener'ı
                 const understoodBtn = document.getElementById('tutorial-understood-btn');
                 if (understoodBtn) {
@@ -1934,8 +1948,15 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
         if (this.campaignMode && this.currentCampaignNode && this.currentCampaignNode.type === 'boss') {
             const player1DeadCount = this.player1Cards.filter(c => c.health <= 0).length;
             
+            // Boss öldüyse normal kazanma mantığı
+            if (!player2Alive) {
+                const winnerName = 'Oyuncu 1';
+                this.endGame(winnerName, 'player1');
+                return true;
+            }
+            
+            // Oyuncunun 4 kartı öldü ama boss yaşıyor
             if (player1DeadCount >= 4 && player1Alive) {
-                // Oyuncunun 4 kartı öldü ama hala canlı kartı var
                 // Boss'un kalan canını kaydet ve loadout ekranına dön
                 const bossCard = this.player2Cards.find(c => c.health > 0);
                 if (bossCard) {
@@ -1947,7 +1968,18 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
                     // LocalStorage'a kaydet
                     localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
                     
+                    // Sunucuya güncelle (eğer bağlıysa)
+                    if (window.Network && window.Network.updateCampaign) {
+                        window.Network.updateCampaign(this.campaignProgress).catch(err => {
+                            console.log('Sunucu güncelle hatası (görmezden gelindi):', err);
+                        });
+                    }
+                    
                     this.addToBattleLog('Tüm kartların öldü! Boss canı kaydedildi. Loadout ekranına dönülüyor...');
+                    
+                    // Oyun ekranını kapat
+                    const gameContainer = document.querySelector('.game-container');
+                    if (gameContainer) gameContainer.style.display = 'none';
                     
                     // Loadout ekranına dön
                     setTimeout(() => {
@@ -2016,15 +2048,6 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
 
     async handleCampaignWin() {
         console.log('handleCampaignWin çağrıldı');
-        // Altın kazan (normal savaş: 100, boss: 200)
-        const goldReward = this.currentCampaignNode?.type === 'boss' ? 200 : 100;
-        console.log('Altın ödülü:', goldReward);
-        
-        if (this.campaignProgress) {
-            this.campaignProgress.gold = (this.campaignProgress.gold || 0) + goldReward;
-            // LocalStorage'a kaydet
-            localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
-        }
         
         // Node'u tamamlandı olarak işaretle
         const nodeId = this.currentCampaignNode?.id;
@@ -2047,8 +2070,28 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             }
         }
 
+        // Altın kazan (normal savaş: 100, boss: 200)
+        const goldReward = this.currentCampaignNode?.type === 'boss' ? 200 : 100;
+        console.log('Altın ödülü:', goldReward);
+        
+        if (this.campaignProgress) {
+            this.campaignProgress.gold = (this.campaignProgress.gold || 0) + goldReward;
+            // LocalStorage'a kaydet
+            localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
+            
+            // Sunucuya güncelle (eğer bağlıysa)
+            if (window.Network && window.Network.updateCampaign) {
+                await window.Network.updateCampaign(this.campaignProgress);
+            }
+        }
+
         this.updateCampaignHUD();
         console.log('Reward ekranı gösteriliyor');
+        
+        // Oyun ekranını kapat
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) gameContainer.style.display = 'none';
+        
         this.showRewardScreen();
     }
 
@@ -2134,16 +2177,32 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
 
     showRewardScreen() {
         console.log('showRewardScreen çağrıldı');
+        
+        // Önce oyun ekranını kapat
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) gameContainer.style.display = 'none';
+        
         if (typeof UI !== 'undefined' && UI.showScreen) {
             UI.showScreen('campaign-reward-screen');
         }
 
         const rewardList = document.getElementById('campaign-reward-list');
-        if (!rewardList) return;
+        if (!rewardList) {
+            console.error('campaign-reward-list elementi bulunamadı!');
+            return;
+        }
 
         // 5 rastgele kart seç (ID 1-16 arası oyuncuya özel kartlar)
         const rewardCards = this.getRandomRewardCards(5);
         console.log('Reward kartları:', rewardCards);
+        
+        if (!rewardCards || rewardCards.length === 0) {
+            console.error('Reward kartları boş geldi!');
+            rewardList.innerHTML = '<p>Reward kartları yüklenemedi. Sefer merkezine dönülüyor...</p>';
+            setTimeout(() => this.showCampaignHub(), 2000);
+            return;
+        }
+        
         this.campaignRewardSelection = []; // Seçilen kartları takip et
         this.currentRewardCards = rewardCards; // Reward kartlarını sakla
         
@@ -2151,7 +2210,10 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             <div class="reward-cards-container">
                 ${rewardCards.map(card => {
                     const cardData = window.cardsData?.find(c => c.id === card.baseId);
-                    if (!cardData) return '';
+                    if (!cardData) {
+                        console.error('CardData bulunamadı, baseId:', card.baseId);
+                        return '';
+                    }
                     const cardObj = new Card(cardData);
                     cardObj.baseId = cardData.id;
                     cardObj.level = card.level || 1;
