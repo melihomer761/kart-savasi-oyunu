@@ -263,22 +263,7 @@ class GameState {
 
         const campaignMap = window.campaignData?.campaignMap || [];
         
-        // Sunucudan progress çek (eğer bağlıysa)
-        if (window.Network && window.Network.isAuthenticated()) {
-            try {
-                const progress = await window.Network.fetchCampaign();
-                if (progress) {
-                    this.campaignProgress = progress;
-                    // LocalStorage'ı güncelle
-                    localStorage.setItem('campaignProgress', JSON.stringify(progress));
-                    console.log('Sunucudan progress yüklendi, currentNode:', progress.currentNode);
-                }
-            } catch (err) {
-                console.log('Sunucudan veri alınamadı, LocalStorage kullanılıyor:', err);
-            }
-        }
-        
-        // LocalStorage'dan yedeklemeyi dene
+        // LocalStorage'dan progress çek
         const localProgress = localStorage.getItem('campaignProgress');
         if (localProgress) {
             try {
@@ -319,12 +304,6 @@ class GameState {
             progress.completedNodes = [];
             // LocalStorage'a kaydet
             localStorage.setItem('campaignProgress', JSON.stringify(progress));
-            // Sunucuya güncelle
-            try {
-                await window.Network.updateCampaign(progress);
-            } catch (err) {
-                console.log('Sunucuya güncelleme hatası (görmezden gelindi):', err);
-            }
         }
         
         const currentNode = progress?.currentNode || 0;
@@ -2095,17 +2074,6 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
                 card => !deadCardBaseIds.includes(card.baseId)
             );
             localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
-            
-            // Sunucuya güncelle (eğer bağlıysa)
-            if (window.Network && window.Network.updateCampaign) {
-                try {
-                    console.log('Sunucuya ölen kartlar güncellemesi gönderiliyor');
-                    await window.Network.updateCampaign(this.campaignProgress);
-                    console.log('Ölen kartlar güncellemesi başarılı');
-                } catch (err) {
-                    console.log('Ölen kartlar güncelleme hatası:', err);
-                }
-            }
         }
         
         // Node'u tamamlandı olarak işaretle
@@ -2122,29 +2090,6 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             
             // LocalStorage'a kaydet
             localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
-            
-            // Sunucuya güncelle (eğer bağlıysa)
-            if (window.Network && window.Network.updateCampaign) {
-                try {
-                    console.log('Sunucuya node tamamlama güncellemesi gönderiliyor:', this.campaignProgress);
-                    await window.Network.updateCampaign(this.campaignProgress);
-                    console.log('Node tamamlama güncellemesi başarılı');
-                    
-                    // Sunucudan güncel progress çek ve LocalStorage'ı güncelle
-                    try {
-                        const serverProgress = await window.Network.fetchCampaign();
-                        if (serverProgress) {
-                            this.campaignProgress = serverProgress;
-                            localStorage.setItem('campaignProgress', JSON.stringify(serverProgress));
-                            console.log('Sunucudan güncel progress çekildi ve LocalStorage güncellendi');
-                        }
-                    } catch (err) {
-                        console.log('Sunucudan progress çekme hatası (görmezden gelindi):', err);
-                    }
-                } catch (err) {
-                    console.log('Node tamamlama güncelleme hatası:', err);
-                }
-            }
         }
 
         // Altın kazan (normal savaş: 100, boss: 200)
@@ -2155,29 +2100,6 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             this.campaignProgress.gold = (this.campaignProgress.gold || 0) + goldReward;
             // LocalStorage'a kaydet
             localStorage.setItem('campaignProgress', JSON.stringify(this.campaignProgress));
-            
-            // Sunucuya güncelle (eğer bağlıysa)
-            if (window.Network && window.Network.updateCampaign) {
-                try {
-                    console.log('Sunucuya altın güncellemesi gönderiliyor:', this.campaignProgress);
-                    await window.Network.updateCampaign(this.campaignProgress);
-                    console.log('Altın güncellemesi başarılı');
-                    
-                    // Sunucudan güncel progress çek ve LocalStorage'ı güncelle
-                    try {
-                        const serverProgress = await window.Network.fetchCampaign();
-                        if (serverProgress) {
-                            this.campaignProgress = serverProgress;
-                            localStorage.setItem('campaignProgress', JSON.stringify(serverProgress));
-                            console.log('Sunucudan güncel progress çekildi ve LocalStorage güncellendi');
-                        }
-                    } catch (err) {
-                        console.log('Sunucudan progress çekme hatası (görmezden gelindi):', err);
-                    }
-                } catch (err) {
-                    console.log('Altın güncelleme hatası:', err);
-                }
-            }
         }
 
         this.updateCampaignHUD();
