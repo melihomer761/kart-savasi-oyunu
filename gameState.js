@@ -2116,6 +2116,18 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             // Sunucuya güncelle (eğer bağlıysa)
             if (window.Network && window.Network.updateCampaign) {
                 await window.Network.updateCampaign(this.campaignProgress);
+                
+                // Sunucudan güncel progress çek ve LocalStorage'ı güncelle
+                try {
+                    const serverProgress = await window.Network.fetchCampaign();
+                    if (serverProgress) {
+                        this.campaignProgress = serverProgress;
+                        localStorage.setItem('campaignProgress', JSON.stringify(serverProgress));
+                        console.log('Sunucudan güncel progress çekildi ve LocalStorage güncellendi');
+                    }
+                } catch (err) {
+                    console.log('Sunucudan progress çekme hatası (görmezden gelindi):', err);
+                }
             }
         }
 
@@ -2131,6 +2143,18 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             // Sunucuya güncelle (eğer bağlıysa)
             if (window.Network && window.Network.updateCampaign) {
                 await window.Network.updateCampaign(this.campaignProgress);
+                
+                // Sunucudan güncel progress çek ve LocalStorage'ı güncelle
+                try {
+                    const serverProgress = await window.Network.fetchCampaign();
+                    if (serverProgress) {
+                        this.campaignProgress = serverProgress;
+                        localStorage.setItem('campaignProgress', JSON.stringify(serverProgress));
+                        console.log('Sunucudan güncel progress çekildi ve LocalStorage güncellendi');
+                    }
+                } catch (err) {
+                    console.log('Sunucudan progress çekme hatası (görmezden gelindi):', err);
+                }
             }
         }
 
