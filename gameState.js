@@ -2094,7 +2094,13 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             
             // Sunucuya güncelle (eğer bağlıysa)
             if (window.Network && window.Network.updateCampaign) {
-                await window.Network.updateCampaign(this.campaignProgress);
+                try {
+                    console.log('Sunucuya ölen kartlar güncellemesi gönderiliyor');
+                    await window.Network.updateCampaign(this.campaignProgress);
+                    console.log('Ölen kartlar güncellemesi başarılı');
+                } catch (err) {
+                    console.log('Ölen kartlar güncelleme hatası:', err);
+                }
             }
         }
         
@@ -2115,18 +2121,24 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             
             // Sunucuya güncelle (eğer bağlıysa)
             if (window.Network && window.Network.updateCampaign) {
-                await window.Network.updateCampaign(this.campaignProgress);
-                
-                // Sunucudan güncel progress çek ve LocalStorage'ı güncelle
                 try {
-                    const serverProgress = await window.Network.fetchCampaign();
-                    if (serverProgress) {
-                        this.campaignProgress = serverProgress;
-                        localStorage.setItem('campaignProgress', JSON.stringify(serverProgress));
-                        console.log('Sunucudan güncel progress çekildi ve LocalStorage güncellendi');
+                    console.log('Sunucuya node tamamlama güncellemesi gönderiliyor:', this.campaignProgress);
+                    await window.Network.updateCampaign(this.campaignProgress);
+                    console.log('Node tamamlama güncellemesi başarılı');
+                    
+                    // Sunucudan güncel progress çek ve LocalStorage'ı güncelle
+                    try {
+                        const serverProgress = await window.Network.fetchCampaign();
+                        if (serverProgress) {
+                            this.campaignProgress = serverProgress;
+                            localStorage.setItem('campaignProgress', JSON.stringify(serverProgress));
+                            console.log('Sunucudan güncel progress çekildi ve LocalStorage güncellendi');
+                        }
+                    } catch (err) {
+                        console.log('Sunucudan progress çekme hatası (görmezden gelindi):', err);
                     }
                 } catch (err) {
-                    console.log('Sunucudan progress çekme hatası (görmezden gelindi):', err);
+                    console.log('Node tamamlama güncelleme hatası:', err);
                 }
             }
         }
@@ -2142,18 +2154,24 @@ const { roomId, role, opponentDeck, opponentName, firstTurn } = data;
             
             // Sunucuya güncelle (eğer bağlıysa)
             if (window.Network && window.Network.updateCampaign) {
-                await window.Network.updateCampaign(this.campaignProgress);
-                
-                // Sunucudan güncel progress çek ve LocalStorage'ı güncelle
                 try {
-                    const serverProgress = await window.Network.fetchCampaign();
-                    if (serverProgress) {
-                        this.campaignProgress = serverProgress;
-                        localStorage.setItem('campaignProgress', JSON.stringify(serverProgress));
-                        console.log('Sunucudan güncel progress çekildi ve LocalStorage güncellendi');
+                    console.log('Sunucuya altın güncellemesi gönderiliyor:', this.campaignProgress);
+                    await window.Network.updateCampaign(this.campaignProgress);
+                    console.log('Altın güncellemesi başarılı');
+                    
+                    // Sunucudan güncel progress çek ve LocalStorage'ı güncelle
+                    try {
+                        const serverProgress = await window.Network.fetchCampaign();
+                        if (serverProgress) {
+                            this.campaignProgress = serverProgress;
+                            localStorage.setItem('campaignProgress', JSON.stringify(serverProgress));
+                            console.log('Sunucudan güncel progress çekildi ve LocalStorage güncellendi');
+                        }
+                    } catch (err) {
+                        console.log('Sunucudan progress çekme hatası (görmezden gelindi):', err);
                     }
                 } catch (err) {
-                    console.log('Sunucudan progress çekme hatası (görmezden gelindi):', err);
+                    console.log('Altın güncelleme hatası:', err);
                 }
             }
         }
