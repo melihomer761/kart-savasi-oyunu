@@ -263,22 +263,7 @@ class GameState {
 
         const campaignMap = window.campaignData?.campaignMap || [];
         
-        // Sunucudan progress çek (eğer bağlıysa)
-        if (window.Network && window.Network.isAuthenticated()) {
-            try {
-                const progress = await window.Network.fetchCampaign();
-                if (progress) {
-                    this.campaignProgress = progress;
-                    // LocalStorage'ı güncelle
-                    localStorage.setItem('campaignProgress', JSON.stringify(progress));
-                    console.log('Sunucudan progress yüklendi, currentNode:', progress.currentNode);
-                }
-            } catch (err) {
-                console.log('Sunucudan veri alınamadı, LocalStorage kullanılıyor:', err);
-            }
-        }
-        
-        // LocalStorage'dan yedeklemeyi dene
+        // LocalStorage'dan progress çek
         const localProgress = localStorage.getItem('campaignProgress');
         if (localProgress) {
             try {
